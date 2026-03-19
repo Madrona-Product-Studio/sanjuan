@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>San Juan Islands Discovery Guide</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+  <!-- ===== HEADER ===== -->
+  <header class="site-header">
+    <div class="logo">San Juan <span>Discovery Guide</span></div>
+  </header>
+
+  <!-- ===== TAB NAVIGATION ===== -->
+  <nav class="tab-nav">
+    <button class="tab-btn active" data-tab="map">Map</button>
+    <button class="tab-btn" data-tab="islands">Islands</button>
+    <button class="tab-btn" data-tab="dining">Dining</button>
+    <button class="tab-btn" data-tab="trails">Trails</button>
+    <button class="tab-btn" data-tab="logistics">Logistics</button>
+  </nav>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <main class="main-content">
+
+    <!-- MAP PANEL -->
+    <section id="panel-map" class="tab-panel active">
+      <div id="map-container">
+        <div class="map-filters">
+          <button class="map-filter-btn active" data-filter="all">All Marinas</button>
+          <button class="map-filter-btn" data-filter="bellingham">Bellingham</button>
+          <button class="map-filter-btn" data-filter="main-islands">Main Islands</button>
+          <button class="map-filter-btn" data-filter="outer">Outer Islands</button>
+          <button class="map-filter-btn" data-filter="home">Home</button>
+          <button class="map-filter-btn" data-filter="public">Public</button>
+          <button class="map-filter-btn" data-filter="resort">Resort</button>
+          <button class="map-filter-btn" data-filter="state-park">State Parks</button>
+        </div>
+
+        <div id="map"></div>
+
+        <div class="map-legend">
+          <h4>Marina Types</h4>
+          <div class="legend-item"><div class="legend-dot" style="background:#c0392b"></div><span>Home Marinas</span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:#d4813b"></div><span>State Parks</span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:#7c5cbf"></div><span>Public Marinas</span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:#2c7da0"></div><span>Resort Marinas</span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:#3d8b6e"></div><span>Special Access</span></div>
+        </div>
+
+        <div class="map-info-panel" id="mapInfoPanel">
+          <div class="handle" onclick="hideMapInfo()"></div>
+          <div class="info-body">
+            <h3>Select a marker</h3>
+            <p>Tap any marina marker for details.</p>
+          </div>
+          <button class="close-btn" onclick="hideMapInfo()">Close</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ISLANDS PANEL -->
+    <section id="panel-islands" class="tab-panel">
+      <div class="section-header">
+        <h2>Explore the Islands</h2>
+        <p>Seven islands spanning walkable harbor towns to wilderness marine parks</p>
+      </div>
+      <div class="island-grid" id="islandGrid"></div>
+      <div class="island-detail" id="islandDetail"></div>
+    </section>
+
+    <!-- DINING PANEL -->
+    <section id="panel-dining" class="tab-panel">
+      <div class="section-header">
+        <h2>Dining</h2>
+        <p>From dockside fish &amp; chips to James Beard-nominated kitchens</p>
+      </div>
+      <div class="category-filter-bar">
+        <button class="cat-filter-btn active" data-island="all">All Islands</button>
+        <button class="cat-filter-btn" data-island="san-juan">San Juan</button>
+        <button class="cat-filter-btn" data-island="orcas">Orcas</button>
+        <button class="cat-filter-btn" data-island="lopez">Lopez</button>
+      </div>
+      <div class="activity-grid" id="diningGrid"></div>
+    </section>
+
+    <!-- TRAILS PANEL -->
+    <section id="panel-trails" class="tab-panel">
+      <div class="section-header">
+        <h2>Trails & Hiking</h2>
+        <p>From easy waterfront strolls to 2,400-foot summit climbs</p>
+      </div>
+      <div class="category-filter-bar">
+        <button class="cat-filter-btn active" data-island="all">All Islands</button>
+        <button class="cat-filter-btn" data-island="san-juan">San Juan</button>
+        <button class="cat-filter-btn" data-island="orcas">Orcas</button>
+        <button class="cat-filter-btn" data-island="lopez">Lopez</button>
+        <button class="cat-filter-btn" data-island="sucia">Sucia</button>
+        <button class="cat-filter-btn" data-island="james">James</button>
+        <button class="cat-filter-btn" data-island="vendovi">Vendovi</button>
+      </div>
+      <div class="activity-grid" id="trailsGrid"></div>
+    </section>
+
+    <!-- LOGISTICS PANEL -->
+    <section id="panel-logistics" class="tab-panel">
+      <div class="section-header">
+        <h2>Cruising Logistics</h2>
+        <p>Water taxis, ferries, fuel, customs, and getting around the islands</p>
+      </div>
+      <div class="logistics-section">
+
+        <div class="logistics-card">
+          <h3>Water Taxis</h3>
+          <ul>
+            <li><strong>Island Express Charters</strong> (Skyline Marina, Anacortes) — Most extensive network. One-way: $45 nearby islands, $79 Friday Harbor, $112 Sucia. 4-person minimums on longer routes. Grocery delivery ~$30.</li>
+            <li><strong>Outer Island Excursions</strong> (Orcas Island) — 11 boats, daily ferry to Sucia with kayak rentals. County contract for emergency inter-island service.</li>
+            <li><strong>San Juan Safaris</strong> (Friday Harbor) — Charter water taxi ~$250-$750/hr depending on vessel.</li>
+          </ul>
+        </div>
+
+        <div class="logistics-card">
+          <h3>Washington State Ferries</h3>
+          <ul>
+            <li><strong>Walk-on passengers and bikes ride FREE</strong> on all inter-island sailings (Lopez, Shaw, Orcas, Friday Harbor).</li>
+            <li>Off-peak: ~5 daily inter-island trips on weekends.</li>
+            <li>Vehicle reservations release in phases: 2 months, 2 weeks, and 2 days before sailing. Strongly recommended in summer.</li>
+            <li>Sidney, BC international route suspended through at least spring 2030.</li>
+          </ul>
+        </div>
+
+        <div class="logistics-card">
+          <h3>Island Transit (No Car)</h3>
+          <ul>
+            <li><strong>San Juan Transit</strong> — Seasonal bus (mid-May to mid-Sep) from Friday Harbor ferry to Roche Harbor, Lime Kiln, American Camp, English Camp, Sculpture Park. Day pass $20 adults / $15 kids.</li>
+            <li><strong>Orcas Island Shuttle</strong> — Rental cars delivered to marinas year-round + seasonal bus.</li>
+            <li><strong>Orcas Island Taxi</strong> — 24 hours, ~$30/trip.</li>
+            <li><strong>Lopez Islander Resort</strong> — Free shuttle van to ferry for guests.</li>
+            <li><strong>No Uber or Lyft</strong> anywhere in the San Juan Islands.</li>
+          </ul>
+        </div>
+
+        <div class="logistics-card">
+          <h3>Fuel Docks</h3>
+          <p>Gas and diesel available at: <strong>Friday Harbor, Roche Harbor, Deer Harbor, Rosario, West Sound, Lopez Islander Resort</strong>. Plan fuel stops no more than two islands apart.</p>
+        </div>
+
+        <div class="logistics-card">
+          <h3>Pumpout Stations</h3>
+          <p><strong>Friday Harbor</strong> — Free pumpout including pumpout boat. <strong>Port of Lopez</strong> in Fisherman Bay (hail VHF 78).</p>
+        </div>
+
+        <div class="logistics-card">
+          <h3>US Customs</h3>
+          <ul>
+            <li><strong>CBP ROAM App</strong> is the standard method — create trip before departing, video interview, clearance before boarding.</li>
+            <li><strong>Friday Harbor</strong> — Staffed customs dock.</li>
+            <li><strong>Roche Harbor</strong> — Unstaffed ROAM booth on G Dock.</li>
+            <li>Vessels 30+ feet require a CBP User Fee Decal.</li>
+          </ul>
+        </div>
+
+        <div class="logistics-card">
+          <h3>Suggested Multi-Day Route</h3>
+          <p>
+            <strong>Friday Harbor</strong> (provision, dine, galleries) &rarr;
+            <strong>Roche Harbor</strong> (resort, Sculpture Park, English Camp) &rarr;
+            <strong>Sucia Island</strong> (1-2 nights: Fossil Bay, Shallow Bay, Echo Bay) &rarr;
+            <strong>Orcas Island</strong> (Deer Harbor or Rosario; Eastsound dining, Moran State Park) &rarr;
+            <strong>Lopez Island</strong> (cycling, Shark Reef, Iceberg Point) &rarr;
+            <strong>Anacortes</strong> (via James Island stopover)
+          </p>
+          <p style="margin-top:8px;font-size:0.82rem;color:var(--color-text-light)">
+            Vendovi Island requires a separate day trip (Thu-Mon, Apr-Sep, 3-hr dock limit). Shaw rewards a half-day detour for quiet. Summer moorage at popular bays fills by early afternoon on weekends — arrive before noon or plan midweek.
+          </p>
+        </div>
+
+        <div class="logistics-card">
+          <h3>Navigation Notes</h3>
+          <ul>
+            <li>Most marinas monitor <strong>VHF Channel 78A</strong> (Friday Harbor uses 66A).</li>
+            <li>NOAA raster charts 18421, 18423, 18424 have been cancelled. Use <strong>NOAA Electronic Navigational Charts (ENC)</strong> or NOAA Custom Chart application.</li>
+            <li>Maintain <strong>1,000-yard buffer</strong> around Southern Resident killer whales.</li>
+            <li>Rosario Strait crossings involve potential 3-4 knot currents and heavy ferry traffic. Time with favorable tides.</li>
+            <li>Peak season: June through September. Off-season = reduced services but uncrowded moorage.</li>
+          </ul>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===== SCRIPTS ===== -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <script src="data/islands.js"></script>
+  <script src="data/marinas.js"></script>
+  <script src="data/activities.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>

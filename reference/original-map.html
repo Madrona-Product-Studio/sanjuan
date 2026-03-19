@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Marine Navigation - Bellingham & San Juan Islands</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+    <style>
+        * { box-sizing: border-box; }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background-color: #f0f8ff;
+            font-size: 14px;
+            line-height: 1.4;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .app-container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            background: white;
+            padding: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        
+        .header h1 {
+            color: #2c5530;
+            text-align: center;
+            margin: 0;
+            font-size: clamp(1.1rem, 4vw, 1.4rem);
+        }
+        
+        .header .subtitle {
+            text-align: center;
+            color: #666;
+            margin: 2px 0;
+            font-size: clamp(0.7rem, 3vw, 0.9rem);
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 500;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .zoom-btn { background-color: #2196F3; color: white; }
+        .zoom-btn:hover, .zoom-btn:active { background-color: #1976D2; }
+        
+        .map-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .info-panel {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-radius: 12px 12px 0 0;
+            box-shadow: 0 -4px 16px rgba(0,0,0,0.15);
+            transform: translateY(100%);
+            transition: transform 0.3s ease-out;
+            z-index: 1000;
+            max-height: 65vh;
+            overflow-y: auto;
+        }
+        
+        .info-panel.show { transform: translateY(0); }
+        
+        .info-panel .handle {
+            width: 40px;
+            height: 4px;
+            background: #ccc;
+            border-radius: 2px;
+            margin: 8px auto 16px;
+            cursor: pointer;
+        }
+        
+        .info-content { padding: 0 16px 20px; }
+        .info-content h3 { margin: 0 0 8px 0; color: #2c5530; font-size: 18px; }
+        .info-distance { color: #666; font-weight: 500; margin-bottom: 12px; }
+        .info-details { color: #333; line-height: 1.4; }
+        
+        .close-info {
+            background: #f5f5f5;
+            border: none;
+            border-radius: 20px;
+            padding: 8px 16px;
+            margin: 16px auto 0;
+            display: block;
+            color: #666;
+            cursor: pointer;
+        }
+        
+        .legend {
+            position: absolute;
+            top: 60px;
+            left: 10px;
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+            z-index: 500;
+            font-size: 12px;
+            min-width: 180px;
+        }
+        
+        .legend h4 { 
+            margin: 0 0 10px 0; 
+            color: #2c5530; 
+            font-size: 13px;
+            font-weight: 600;
+        }
+        
+        .legend-row {
+            display: flex;
+            align-items: center;
+            margin: 6px 0;
+            gap: 8px;
+        }
+        
+        .color-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            flex-shrink: 0;
+        }
+        
+        .red-dot { background-color: #ff4444; }
+        .orange-dot { background-color: #FF9800; }
+        .purple-dot { background-color: #9C27B0; }
+        .blue-dot { background-color: #2196F3; }
+        .green-dot { background-color: #4CAF50; }
+        .gray-dot { background-color: #999; }
+        
+        @media (max-width: 768px) {
+            button { padding: 8px 12px; font-size: 11px; min-height: 36px; }
+            .legend { 
+                left: 5px; 
+                top: 50px; 
+                padding: 8px;
+                font-size: 11px;
+                min-width: 160px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="header">
+            <h1>Marine Navigation - Complete San Juan Islands</h1>
+            <p class="subtitle">All dock facilities with verified GPS coordinates</p>
+            <div class="controls">
+                <button class="zoom-btn" onclick="zoomToArea('local')">Bellingham</button>
+                <button class="zoom-btn" onclick="zoomToArea('sanjuans')">Main Islands</button>
+                <button class="zoom-btn" onclick="zoomToArea('outer')">Outer Islands</button>
+                <button class="zoom-btn" onclick="zoomToArea('all')">Full Region</button>
+            </div>
+        </div>
+        
+        <div class="map-container">
+            <div id="map"></div>
+            
+            <div class="legend">
+                <h4>Marina Categories</h4>
+                <div class="legend-row">
+                    <div class="color-dot red-dot"></div>
+                    <span>Home Marinas</span>
+                </div>
+                <div class="legend-row">
+                    <div class="color-dot orange-dot"></div>
+                    <span>State Parks</span>
+                </div>
+                <div class="legend-row">
+                    <div class="color-dot purple-dot"></div>
+                    <span>Public Marinas</span>
+                </div>
+                <div class="legend-row">
+                    <div class="color-dot blue-dot"></div>
+                    <span>Resort Marinas</span>
+                </div>
+                <div class="legend-row">
+                    <div class="color-dot green-dot"></div>
+                    <span>Special Access</span>
+                </div>
+                <div class="legend-row">
+                    <div class="color-dot gray-dot"></div>
+                    <span>No Docks</span>
+                </div>
+            </div>
+            
+            <div class="info-panel" id="infoPanel">
+                <div class="handle" onclick="hideInfo()"></div>
+                <div class="info-content" id="infoContent">
+                    <h3>Select a marina marker</h3>
+                    <p>Click any marker to view detailed facility information.</p>
+                </div>
+                <button class="close-info" onclick="hideInfo()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <script>
+        // MARINA LOCATIONS WITH PROPER CATEGORIZATION
+        const marinas = [
+            // HOME MARINAS (Red)
+            { name: "Squalicum Marina", lat: 48.780, lng: -122.488, color: "#ff4444", type: "Home Marina", distance: "Start Point", details: "Home base with 1400+ slips. Visitor moorage at Gates 3, 9, and 12. VHF Channel 16. Rates $0.75/ft per night (Apr-Oct)." },
+            { name: "Cap Sante Marina", lat: 48.5114, lng: -122.6039, color: "#ff4444", type: "Home Marina", distance: "15-18 miles", details: "Port of Anacortes facility with 950 slips. Vessels up to 135 feet. VHF Channel 66A. Primary staging point." },
+            
+            // STATE PARKS (Orange)
+            { name: "James Island State Park", lat: 48.5130, lng: -122.7733, color: "#FF9800", type: "State Park", distance: "18-20 miles", details: "West Cove: 128-foot dock, 256 linear feet moorage. Max 45-foot vessels. $23 + $1/ft." },
+            { name: "Spencer Spit State Park", lat: 48.5397, lng: -122.8544, color: "#FF9800", type: "State Park", distance: "24-26 miles", details: "11 moorage buoys on Cascadia Marine Trail. $15/night, 3-night max, first-come basis." },
+            { name: "San Juan County Park", lat: 48.528, lng: -123.158, color: "#FF9800", type: "State Park", distance: "30-32 miles", details: "Smallpox Bay boat launch with small dock. 12-acre park, popular whale watching." },
+            { name: "Shaw Island County Park", lat: 48.5598, lng: -122.9416, color: "#FF9800", type: "State Park", distance: "25-27 miles", details: "Boat launch with dock. 11 campsites, Cascadia Marine Trail. 60-acre county park." },
+            { name: "Sucia Island State Park", lat: 48.7609, lng: -122.8949, color: "#FF9800", type: "State Park", distance: "35-38 miles", details: "Echo Bay: 48 mooring buoys, 2 linear moorage systems, multiple docks. Popular outer island destination." },
+            { name: "Matia Island State Park", lat: 48.723, lng: -122.833, color: "#FF9800", type: "State Park", distance: "36-38 miles", details: "Rolfe Cove: 128-foot dock + 2 buoys. National Wildlife Refuge with access restrictions." },
+            
+            // PUBLIC MARINAS (Purple)
+            { name: "Blaine Harbor", lat: 48.993, lng: -122.747, color: "#9C27B0", type: "Public Marina", distance: "15 miles north", details: "Port of Bellingham facility. 629 slips, 800+ feet visitor moorage at Gate 2. US-Canada border location." },
+            { name: "Friday Harbor Marina", lat: 48.537, lng: -123.017, color: "#9C27B0", type: "Public Marina", distance: "28-30 miles", details: "Port of Friday Harbor facility. 500 slips, 100 for overnight visitors. 20-70ft vessels. Downtown location." },
+            
+            // RESORT MARINAS (Blue)
+            { name: "Semiahmoo Marina", lat: 48.988, lng: -122.770, color: "#2196F3", type: "Resort Marina", distance: "14 miles north", details: "Semiahmoo Resort marina on scenic spit. Fuel dock 8am-4pm, VHF Channel 68." },
+            { name: "Lopez Islander Resort", lat: 48.5133, lng: -122.9133, color: "#2196F3", type: "Resort Marina", distance: "25-28 miles", details: "64-slip marina, Fisherman Bay. CAUTION: 5ft depth at zero tide. VHF 78A." },
+            { name: "Roche Harbor Resort", lat: 48.6098, lng: -123.1543, color: "#2196F3", type: "Resort Marina", distance: "32-35 miles", details: "Vessels up to 150ft. US Customs port of entry. VHF 78a. Historic resort with full amenities." },
+            { name: "Deer Harbor Marina", lat: 48.6234, lng: -122.9994, color: "#2196F3", type: "Resort Marina", distance: "30-32 miles", details: "110 slips, vessels up to 120ft. Southwest Orcas Island. VHF 78A. Full services." },
+            { name: "West Sound Marina", lat: 48.6038, lng: -122.9109, color: "#2196F3", type: "Resort Marina", distance: "28-30 miles", details: "180 boats + 400ft guest moorage. Haul-out capability. VHF 16 (switch to 9)." },
+            { name: "Rosario Resort Marina", lat: 48.6462, lng: -122.8745, color: "#2196F3", type: "Resort Marina", distance: "30-33 miles", details: "Cascade Bay: 38 slips + 8 mooring buoys. Vessels up to 130ft. VHF 78A." },
+            { name: "Guemes Island Resort", lat: 48.5380, lng: -122.6140, color: "#2196F3", type: "Resort Marina", distance: "16-17 miles", details: "12 buoys available for guests ($50/night non-guests). Ferry access from Anacortes." },
+            
+            // SPECIAL ACCESS (Green)
+            { name: "Vendovi Island", lat: 48.6084, lng: -122.6088, color: "#4CAF50", type: "Special Access", distance: "16-18 miles", details: "San Juan Preservation Trust facility. 70-foot dock, 3-hour limit. April-Sept, Thu-Mon 10am-6pm only." },
+            
+            // NO DOCKS (Gray)
+            { name: "Saddlebag Island State Park", lat: 48.5450, lng: -122.7100, color: "#999", type: "No Docks", distance: "18-20 miles", details: "WARNING: NO DOCK FACILITIES. Beach access only. Day use, hiking trails." },
+            { name: "Obstruction Pass State Park", lat: 48.6085, lng: -122.8264, color: "#999", type: "No Docks", distance: "26-29 miles", details: "WARNING: 3 mooring buoys only - NO DOCKS. Southeast Orcas Island." }
+        ];
+
+        // Initialize map
+        const map = L.map('map', {
+            center: [48.70, -122.85],
+            zoom: 8,
+            zoomControl: true,
+            touchZoom: true,
+            scrollWheelZoom: true,
+            doubleClickZoom: true,
+            boxZoom: false,
+            tap: true,
+            tapTolerance: 20
+        });
+
+        // Add map tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 18
+        }).addTo(map);
+
+        // Create all markers
+        marinas.forEach(function(marina) {
+            const marker = L.circleMarker([marina.lat, marina.lng], {
+                radius: window.innerWidth < 768 ? 10 : 8,
+                fillColor: marina.color,
+                color: 'white',
+                weight: 2,
+                opacity: 1,
+                fillOpacity: 0.9
+            }).addTo(map);
+
+            marker.on('click', function(e) {
+                e.originalEvent.stopPropagation();
+                showInfo(marina);
+            });
+
+            // Desktop hover effects
+            if (window.innerWidth >= 768) {
+                marker.on('mouseover', function() {
+                    this.setRadius(10);
+                    this.setStyle({fillOpacity: 1});
+                });
+                marker.on('mouseout', function() {
+                    this.setRadius(8);
+                    this.setStyle({fillOpacity: 0.9});
+                });
+            }
+        });
+
+        // Show marina info
+        function showInfo(marina) {
+            const content = document.getElementById('infoContent');
+            content.innerHTML = `
+                <h3>${marina.name}</h3>
+                <div class="info-distance">${marina.distance} • ${marina.type}</div>
+                <div class="info-details">${marina.details}</div>
+            `;
+            document.getElementById('infoPanel').classList.add('show');
+        }
+
+        function hideInfo() {
+            document.getElementById('infoPanel').classList.remove('show');
+        }
+
+        // Zoom functions
+        function zoomToArea(area) {
+            hideInfo();
+            switch(area) {
+                case 'local':
+                    map.setView([48.87, -122.65], 10);
+                    break;
+                case 'sanjuans':
+                    map.setView([48.58, -122.95], 9);
+                    break;
+                case 'outer':
+                    map.setView([48.74, -122.86], 10);
+                    break;
+                case 'all':
+                    const bounds = L.latLngBounds([
+                        [48.35, -123.25],
+                        [48.85, -122.40]
+                    ]);
+                    map.fitBounds(bounds, { padding: [20, 20] });
+                    break;
+            }
+        }
+
+        // Handle map clicks
+        map.on('click', function(e) {
+            if (!e.originalEvent.target.classList.contains('leaflet-interactive')) {
+                hideInfo();
+            }
+        });
+
+        console.log(`Map initialized with ${marinas.length} marinas`);
+    </script>
+</body>
+</html>
