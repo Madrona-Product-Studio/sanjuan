@@ -6,10 +6,12 @@
 let map = null;
 let markers = [];
 let activeTab = 'map';
-let activeIsland = null; // for island detail view
+let activeIsland = null;
 let activeMapFilter = 'all';
 let activeDiningFilter = 'all';
 let activeTrailFilter = 'all';
+const placesCache = {};
+let activePlacesController = null;
 
 // ========== INITIALIZATION ==========
 document.addEventListener('DOMContentLoaded', () => {
@@ -20,6 +22,98 @@ document.addEventListener('DOMContentLoaded', () => {
   renderTrails();
   renderLogistics();
 });
+
+// ========== GOOGLE PLACES ==========
+async function fetchPlaceData(name, area) {
+  const cacheKey = `${name}|${area}`;
+  if (placesCache[cacheKey]) return placesCache[cacheKey];
+
+  if (activePlacesController) activePlacesController.abort();
+  activePlacesController = new AbortController();
+
+  const query = encodeURIComponent(`${name} ${area} Washington`);
+  const res = await fetch(`/api/places-search?query=${query}`, {
+    signal: activePlacesController.signal
+  });
+  if (!res.ok) return null;
+
+  const data = await res.json();
+  const photos = (data.photoRefs || []).slice(0, 6).map(ref =>
+    `/api/place-photo?ref=${encodeURIComponent(ref)}&maxwidth=800`
+  );
+
+  const result = {
+    placeId: data.placeId,
+    name: data.name,
+    rating: data.rating,
+    userRatingsTotal: data.userRatingsTotal,
+    address: data.address,
+    phone: data.phone,
+    website: data.website,
+    photos,
+  };
+  placesCache[cacheKey] = result;
+  return result;
+}
+
+function renderPlacesEnrichment(places) {
+  if (!places) return '';
+
+  let html = '';
+
+  if (places.photos.length) {
+    html += `<div class="places-photos">`;
+    html += `<div class="photos-scroll">`;
+    places.photos.forEach((url, i) => {
+      html += `<img src="${url}" alt="Photo ${i + 1}" class="place-photo" loading="lazy" />`;
+    });
+    html += `</div></div>`;
+  }
+
+  html += `<div class="places-actions">`;
+
+  if (places.rating) {
+    html += `<div class="places-rating">`;
+    html += `<span class="rating-stars">${renderStars(places.rating)}</span>`;
+    html += `<span class="rating-text">${places.rating}</span>`;
+    if (places.userRatingsTotal) {
+      html += `<span class="rating-count">(${places.userRatingsTotal})</span>`;
+    }
+    html += `</div>`;
+  }
+
+  const buttons = [];
+
+  if (places.placeId) {
+    buttons.push(`<a href="https://www.google.com/maps/place/?q=place_id:${places.placeId}" target="_blank" rel="noopener noreferrer" class="action-btn action-directions"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>Directions</a>`);
+  }
+
+  if (places.phone) {
+    buttons.push(`<a href="tel:${places.phone}" class="action-btn action-phone"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>${places.phone}</a>`);
+  }
+
+  if (places.website) {
+    buttons.push(`<a href="${places.website}" target="_blank" rel="noopener noreferrer" class="action-btn action-website"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>Website</a>`);
+  }
+
+  if (buttons.length) {
+    html += `<div class="action-buttons">${buttons.join('')}</div>`;
+  }
+
+  html += `</div>`;
+  return html;
+}
+
+function renderStars(rating) {
+  const full = Math.floor(rating);
+  const half = rating - full >= 0.3;
+  let stars = '';
+  for (let i = 0; i < full; i++) stars += '<span class="star full">&#9733;</span>';
+  if (half) stars += '<span class="star half">&#9733;</span>';
+  const empty = 5 - full - (half ? 1 : 0);
+  for (let i = 0; i < empty; i++) stars += '<span class="star empty">&#9734;</span>';
+  return stars;
+}
 
 // ========== TAB NAVIGATION ==========
 function initTabs() {
@@ -33,17 +127,13 @@ function initTabs() {
 
 function switchTab(tab) {
   activeTab = tab;
-  // Update buttons
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelector(`.tab-btn[data-tab="${tab}"]`).classList.add('active');
-  // Update panels
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.getElementById(`panel-${tab}`).classList.add('active');
-  // Resize map if switching to it
   if (tab === 'map' && map) {
     setTimeout(() => map.invalidateSize(), 100);
   }
-  // Reset island detail when switching to islands tab
   if (tab === 'islands') {
     hideIslandDetail();
   }
@@ -69,7 +159,6 @@ function initMap() {
 }
 
 function renderMapMarkers(filter) {
-  // Clear existing
   markers.forEach(m => map.removeLayer(m));
   markers = [];
 
@@ -139,6 +228,8 @@ function showMapInfo(marina, cat) {
       ${marina.area || ''}
       ${marina.vhf ? ' &middot; VHF ' + marina.vhf : ''}
     </div>
+    <div class="places-loading" id="mapPlacesLoading"><div class="loading-shimmer"></div><div class="loading-shimmer short"></div></div>
+    <div id="mapPlacesContent"></div>
     <div class="info-details">${marina.details}</div>
   `;
 
@@ -154,6 +245,16 @@ function showMapInfo(marina, cat) {
 
   body.innerHTML = html;
   panel.classList.add('show');
+
+  fetchPlaceData(marina.name, marina.area).then(places => {
+    const loadingEl = document.getElementById('mapPlacesLoading');
+    const contentEl = document.getElementById('mapPlacesContent');
+    if (loadingEl) loadingEl.style.display = 'none';
+    if (contentEl) contentEl.innerHTML = renderPlacesEnrichment(places);
+  }).catch(() => {
+    const loadingEl = document.getElementById('mapPlacesLoading');
+    if (loadingEl) loadingEl.style.display = 'none';
+  });
 }
 
 function hideMapInfo() {
@@ -210,7 +311,7 @@ function showIslandDetail(islandId) {
     html += islandMarinas.map(m => {
       const cat = MARINA_CATEGORIES[m.category] || { color: '#999', label: m.type };
       return `
-        <div class="activity-card">
+        <div class="activity-card clickable-card" data-place-name="${m.name}" data-place-area="${m.area}">
           <h4>${m.name}</h4>
           <div class="meta">
             <span style="color:${cat.color};font-weight:600">${cat.label}</span>
@@ -219,6 +320,7 @@ function showIslandDetail(islandId) {
           </div>
           <p>${m.details}</p>
           ${m.caution ? '<div class="info-caution" style="margin-top:8px">' + m.caution + '</div>' : ''}
+          <div class="card-places-content"></div>
         </div>
       `;
     }).join('');
@@ -228,7 +330,7 @@ function showIslandDetail(islandId) {
   if (islandDining.length) {
     html += `<div class="detail-section"><h3>Dining</h3><div class="activity-list">`;
     html += islandDining.map(d => `
-      <div class="activity-card">
+      <div class="activity-card clickable-card" data-place-name="${d.name}" data-place-area="${d.area}">
         <h4>${d.name}</h4>
         <div class="meta">
           <span>${d.cuisine}</span>
@@ -236,6 +338,7 @@ function showIslandDetail(islandId) {
           ${d.walkFromDock ? '<span>' + d.walkFromDock + ' from dock</span>' : ''}
         </div>
         <p>${d.description}</p>
+        <div class="card-places-content"></div>
       </div>
     `).join('');
     html += `</div></div>`;
@@ -244,7 +347,7 @@ function showIslandDetail(islandId) {
   if (islandTrails.length) {
     html += `<div class="detail-section"><h3>Trails & Hiking</h3><div class="activity-list">`;
     html += islandTrails.map(t => `
-      <div class="activity-card">
+      <div class="activity-card clickable-card" data-place-name="${t.name}" data-place-area="${t.area}">
         <h4>${t.name}</h4>
         <div class="meta">
           <span>${t.difficulty}</span>
@@ -253,6 +356,7 @@ function showIslandDetail(islandId) {
           ${t.discoverPass ? '<span style="color:#e65100">Discover Pass</span>' : ''}
         </div>
         <p>${t.description}</p>
+        <div class="card-places-content"></div>
       </div>
     `).join('');
     html += `</div></div>`;
@@ -261,10 +365,11 @@ function showIslandDetail(islandId) {
   if (islandGalleries.length) {
     html += `<div class="detail-section"><h3>Art & Galleries</h3><div class="activity-list">`;
     html += islandGalleries.map(g => `
-      <div class="activity-card">
+      <div class="activity-card clickable-card" data-place-name="${g.name}" data-place-area="${g.area}">
         <h4>${g.name}</h4>
         <div class="meta"><span>${g.area}</span>${g.walkFromDock ? '<span>' + g.walkFromDock + ' from dock</span>' : ''}</div>
         <p>${g.description}</p>
+        <div class="card-places-content"></div>
       </div>
     `).join('');
     html += `</div></div>`;
@@ -273,10 +378,11 @@ function showIslandDetail(islandId) {
   if (islandWellness.length) {
     html += `<div class="detail-section"><h3>Wellness & Yoga</h3><div class="activity-list">`;
     html += islandWellness.map(w => `
-      <div class="activity-card">
+      <div class="activity-card clickable-card" data-place-name="${w.name}" data-place-area="${w.area}">
         <h4>${w.name}</h4>
         <div class="meta"><span>${w.area}</span></div>
         <p>${w.description}</p>
+        <div class="card-places-content"></div>
       </div>
     `).join('');
     html += `</div></div>`;
@@ -285,6 +391,8 @@ function showIslandDetail(islandId) {
   detail.innerHTML = html;
   detail.classList.add('active');
   window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  initClickableCards(detail);
 }
 
 function hideIslandDetail() {
@@ -293,6 +401,42 @@ function hideIslandDetail() {
   document.getElementById('islandDetail').innerHTML = '';
   document.getElementById('islandGrid').style.display = '';
   document.querySelector('#panel-islands .section-header').style.display = '';
+}
+
+// ========== CLICKABLE CARD EXPANSION ==========
+function initClickableCards(container) {
+  container.querySelectorAll('.clickable-card').forEach(card => {
+    card.addEventListener('click', function (e) {
+      if (e.target.closest('a')) return;
+      const contentEl = this.querySelector('.card-places-content');
+      if (!contentEl) return;
+
+      if (this.classList.contains('expanded')) {
+        this.classList.remove('expanded');
+        contentEl.innerHTML = '';
+        return;
+      }
+
+      container.querySelectorAll('.clickable-card.expanded').forEach(c => {
+        c.classList.remove('expanded');
+        c.querySelector('.card-places-content').innerHTML = '';
+      });
+
+      this.classList.add('expanded');
+      contentEl.innerHTML = '<div class="places-loading"><div class="loading-shimmer"></div><div class="loading-shimmer short"></div></div>';
+
+      const name = this.dataset.placeName;
+      const area = this.dataset.placeArea;
+
+      fetchPlaceData(name, area).then(places => {
+        if (this.classList.contains('expanded')) {
+          contentEl.innerHTML = renderPlacesEnrichment(places);
+        }
+      }).catch(() => {
+        contentEl.innerHTML = '';
+      });
+    });
+  });
 }
 
 // ========== DINING ==========
@@ -313,7 +457,7 @@ function renderDining() {
 function renderDiningCards(container, filter) {
   const items = filter === 'all' ? DINING : DINING.filter(d => d.island === filter);
   container.innerHTML = items.map(d => `
-    <div class="activity-card">
+    <div class="activity-card clickable-card" data-place-name="${d.name}" data-place-area="${d.area}">
       <h4>${d.name}</h4>
       <div class="meta">
         <span>${d.cuisine}</span>
@@ -323,8 +467,11 @@ function renderDiningCards(container, filter) {
       </div>
       <p>${d.description}</p>
       ${d.hours ? '<div class="meta" style="margin-top:4px"><span>' + d.hours + '</span></div>' : ''}
+      <div class="card-places-content"></div>
     </div>
   `).join('');
+
+  initClickableCards(container);
 }
 
 // ========== TRAILS ==========
@@ -345,7 +492,7 @@ function renderTrails() {
 function renderTrailCards(container, filter) {
   const items = filter === 'all' ? TRAILS : TRAILS.filter(t => t.island === filter);
   container.innerHTML = items.map(t => `
-    <div class="activity-card">
+    <div class="activity-card clickable-card" data-place-name="${t.name}" data-place-area="${t.area}">
       <h4>${t.name}</h4>
       <div class="meta">
         <span style="font-weight:600;color:${difficultyColor(t.difficulty)}">${t.difficulty}</span>
@@ -355,8 +502,11 @@ function renderTrailCards(container, filter) {
         ${t.discoverPass ? '<span style="color:#e65100;font-weight:600">Discover Pass Required</span>' : ''}
       </div>
       <p>${t.description}</p>
+      <div class="card-places-content"></div>
     </div>
   `).join('');
+
+  initClickableCards(container);
 }
 
 function difficultyColor(d) {
@@ -367,7 +517,7 @@ function difficultyColor(d) {
 
 // ========== LOGISTICS ==========
 function renderLogistics() {
-  // Static content rendered in HTML, nothing dynamic needed for v1
+  // Static content rendered in HTML
 }
 
 // ========== MAP CLICK HANDLER ==========

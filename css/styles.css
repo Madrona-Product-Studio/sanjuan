@@ -765,3 +765,205 @@ body {
   .category-filter-bar { padding: 8px 0 18px; }
   .logistics-section { padding: 0 0 48px; }
 }
+
+/* === GOOGLE PLACES ENRICHMENT === */
+
+/* Clickable cards */
+.clickable-card {
+  cursor: pointer;
+  position: relative;
+}
+
+.clickable-card::after {
+  content: 'Tap for photos & info';
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--color-text-light);
+  opacity: 0;
+  transition: opacity var(--transition);
+  letter-spacing: 0.02em;
+  pointer-events: none;
+}
+
+.clickable-card:hover::after {
+  opacity: 1;
+}
+
+.clickable-card.expanded::after {
+  content: 'Tap to close';
+  opacity: 0.6;
+}
+
+.clickable-card.expanded {
+  border-color: var(--color-accent-light);
+  box-shadow: var(--shadow-md);
+}
+
+/* Photo carousel */
+.places-photos {
+  margin: 14px -20px 0;
+  overflow: hidden;
+}
+
+.photos-scroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 0 20px;
+}
+
+.photos-scroll::-webkit-scrollbar { display: none; }
+
+.place-photo {
+  width: 260px;
+  height: 180px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+  scroll-snap-align: start;
+  background: var(--color-surface-cool);
+}
+
+/* Rating */
+.places-actions {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border-light);
+}
+
+.places-rating {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.rating-stars {
+  display: flex;
+  gap: 1px;
+}
+
+.star.full { color: #f59e0b; }
+.star.half { color: #fbbf24; opacity: 0.7; }
+.star.empty { color: var(--color-border); }
+
+.rating-text {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.rating-count {
+  font-size: 0.78rem;
+  color: var(--color-text-light);
+}
+
+/* Action buttons */
+.action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 20px;
+  text-decoration: none;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+
+.action-directions {
+  background: var(--color-primary);
+  color: white;
+}
+
+.action-directions:hover {
+  background: var(--color-primary-mid);
+  box-shadow: 0 2px 8px rgba(15,43,60,0.2);
+}
+
+.action-phone {
+  background: var(--color-surface-cool);
+  color: var(--color-primary);
+  border: 1px solid var(--color-border);
+}
+
+.action-phone:hover {
+  background: var(--color-border-light);
+}
+
+.action-website {
+  background: var(--color-surface-cool);
+  color: var(--color-primary);
+  border: 1px solid var(--color-border);
+}
+
+.action-website:hover {
+  background: var(--color-border-light);
+}
+
+/* Loading shimmer */
+.places-loading {
+  margin: 12px 0;
+}
+
+.loading-shimmer {
+  height: 12px;
+  background: linear-gradient(90deg, var(--color-surface-cool) 25%, var(--color-border-light) 50%, var(--color-surface-cool) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.loading-shimmer.short {
+  width: 60%;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Map info panel photos — smaller */
+.map-info-panel .places-photos {
+  margin: 12px -20px 0;
+}
+
+.map-info-panel .place-photo {
+  width: 200px;
+  height: 140px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .place-photo {
+    width: 220px;
+    height: 150px;
+  }
+
+  .clickable-card::after {
+    display: none;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+  }
+
+  .action-btn {
+    justify-content: center;
+  }
+}
