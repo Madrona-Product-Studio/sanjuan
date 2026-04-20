@@ -493,40 +493,25 @@ function hideMapInfo() {
 }
 
 function initPanelGestures() {
-  const panel = document.getElementById('mapInfoPanel');
   const handle = document.getElementById('panelHandle');
   const peek = document.getElementById('peekContent');
   let startY = 0;
-  let dragging = false;
 
-  function onStart(e) {
+  handle.addEventListener('touchstart', (e) => {
     if (panelState === 'hidden') return;
-    startY = e.touches ? e.touches[0].clientY : e.clientY;
-    dragging = true;
-    panel.style.transition = 'none';
-  }
+    startY = e.touches[0].clientY;
+  }, { passive: true });
 
-  function onEnd(e) {
-    if (!dragging) return;
-    dragging = false;
-    panel.style.transition = '';
-    const endY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
-    const diff = endY - startY;
-
-    if (diff > 40) {
-      // Swipe down
+  handle.addEventListener('touchend', (e) => {
+    if (panelState === 'hidden') return;
+    const diff = e.changedTouches[0].clientY - startY;
+    if (diff > 30) {
       if (panelState === 'expanded') setPanelState('peek');
       else setPanelState('hidden');
-    } else if (diff < -40) {
-      // Swipe up
+    } else if (diff < -30) {
       if (panelState === 'peek') setPanelState('expanded');
     }
-  }
-
-  handle.addEventListener('touchstart', onStart, { passive: true });
-  handle.addEventListener('touchend', onEnd);
-  handle.addEventListener('mousedown', onStart);
-  document.addEventListener('mouseup', onEnd);
+  });
 
   // Tap peek to expand
   peek.addEventListener('click', () => {
