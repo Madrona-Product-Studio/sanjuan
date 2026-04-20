@@ -833,6 +833,15 @@ body {
 /* Modal photos — carousel */
 .modal-photos {
   margin-top: -40px;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
+  opacity: 0;
+}
+
+.modal-photos.loaded {
+  max-height: 400px;
+  opacity: 1;
 }
 
 .modal-photos-placeholder {
@@ -921,6 +930,14 @@ body {
 .map-photos {
   margin: 12px -20px;
   overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s ease;
+}
+
+.map-photos.loaded {
+  max-height: 200px;
+  opacity: 1;
 }
 
 .map-photos .photos-scroll {
@@ -1005,6 +1022,33 @@ body {
 
 .modal-places-loading {
   margin: 16px 0;
+}
+
+/* Fade-in for Places content */
+#modalPlacesContent,
+#mapPlacesContent {
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+#modalPlacesContent.loaded,
+#mapPlacesContent.loaded {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Smooth shimmer-to-content */
+.map-places-loading,
+.modal-places-loading {
+  transition: opacity 0.25s ease, max-height 0.25s ease;
+  overflow: hidden;
+}
+
+.map-places-loading.hidden,
+.modal-places-loading.hidden {
+  opacity: 0;
+  max-height: 0;
 }
 
 /* === CARD ENHANCEMENTS === */

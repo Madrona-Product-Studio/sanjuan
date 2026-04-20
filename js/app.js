@@ -123,7 +123,7 @@ function openModal(item) {
     fetchPlaceData(item.placeName, item.placeArea).then(places => {
       const loadingEl = document.getElementById('modalPlacesLoading');
       const contentEl = document.getElementById('modalPlacesContent');
-      if (loadingEl) loadingEl.style.display = 'none';
+      if (loadingEl) loadingEl.classList.add('hidden');
 
       if (!places) {
         if (contentEl) contentEl.innerHTML = '';
@@ -149,6 +149,8 @@ function openModal(item) {
               <button class="carousel-arrow carousel-next" id="carouselNext">&rsaquo;</button>
             ` : ''}
           </div>`;
+        // Trigger smooth reveal after a frame
+        requestAnimationFrame(() => photosEl.classList.add('loaded'));
         if (places.photos.length > 1) initCarousel();
       } else {
         photosEl.innerHTML = '';
@@ -185,13 +187,16 @@ function openModal(item) {
         placesHtml += `<div class="action-buttons">${buttons.join('')}</div>`;
       }
 
-      if (contentEl) contentEl.innerHTML = placesHtml;
+      if (contentEl) {
+        contentEl.innerHTML = placesHtml;
+        requestAnimationFrame(() => contentEl.classList.add('loaded'));
+      }
     }).catch(() => {
       const loadingEl = document.getElementById('modalPlacesLoading');
-      if (loadingEl) loadingEl.style.display = 'none';
+      if (loadingEl) loadingEl.classList.add('hidden');
     });
   } else {
-    document.getElementById('modalPlacesLoading').style.display = 'none';
+    document.getElementById('modalPlacesLoading').classList.add('hidden');
   }
 }
 
@@ -199,6 +204,9 @@ function closeModal() {
   const overlay = document.getElementById('detailModalOverlay');
   overlay.classList.remove('active');
   document.body.style.overflow = '';
+  // Reset photo state for next open
+  const photosEl = document.getElementById('modalPhotos');
+  if (photosEl) photosEl.classList.remove('loaded');
 }
 
 function initCarousel() {
@@ -408,12 +416,12 @@ function showMapInfo(marina, cat) {
   fetchPlaceData(marina.name, marina.area).then(places => {
     const loadingEl = document.getElementById('mapPlacesLoading');
     const contentEl = document.getElementById('mapPlacesContent');
-    if (loadingEl) loadingEl.style.display = 'none';
+    if (loadingEl) loadingEl.classList.add('hidden');
     if (!places || !contentEl) return;
 
     let ph = '';
     if (places.photos.length) {
-      ph += `<div class="map-photos"><div class="photos-scroll">`;
+      ph += `<div class="map-photos" id="mapPhotos"><div class="photos-scroll">`;
       places.photos.forEach((url, i) => {
         ph += `<img src="${url}" alt="Photo ${i + 1}" class="place-photo" loading="lazy" />`;
       });
@@ -433,9 +441,14 @@ function showMapInfo(marina, cat) {
     if (btns.length) ph += `<div class="action-buttons">${btns.join('')}</div>`;
 
     contentEl.innerHTML = ph;
+    requestAnimationFrame(() => {
+      contentEl.classList.add('loaded');
+      const mapPhotos = document.getElementById('mapPhotos');
+      if (mapPhotos) mapPhotos.classList.add('loaded');
+    });
   }).catch(() => {
     const loadingEl = document.getElementById('mapPlacesLoading');
-    if (loadingEl) loadingEl.style.display = 'none';
+    if (loadingEl) loadingEl.classList.add('hidden');
   });
 }
 
