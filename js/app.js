@@ -130,11 +130,26 @@ function openModal(item) {
         return;
       }
 
-      // Render photos in the photo area
+      // Render photos in the photo area with dots
       if (places.photos.length) {
-        photosEl.innerHTML = `<div class="photos-scroll">${places.photos.map((url, i) =>
-          `<img src="${url}" alt="Photo ${i + 1}" class="place-photo" loading="lazy" />`
-        ).join('')}</div>`;
+        photosEl.innerHTML = `
+          <div class="modal-carousel" id="modalCarousel">
+            <div class="carousel-track" id="carouselTrack">
+              ${places.photos.map((url, i) =>
+                `<img src="${url}" alt="Photo ${i + 1}" class="carousel-slide" loading="lazy" />`
+              ).join('')}
+            </div>
+            ${places.photos.length > 1 ? `
+              <div class="carousel-dots" id="carouselDots">
+                ${places.photos.map((_, i) =>
+                  `<button class="carousel-dot${i === 0 ? ' active' : ''}" data-index="${i}"></button>`
+                ).join('')}
+              </div>
+              <button class="carousel-arrow carousel-prev" id="carouselPrev">&lsaquo;</button>
+              <button class="carousel-arrow carousel-next" id="carouselNext">&rsaquo;</button>
+            ` : ''}
+          </div>`;
+        if (places.photos.length > 1) initCarousel();
       } else {
         photosEl.innerHTML = '';
       }
@@ -184,6 +199,36 @@ function closeModal() {
   const overlay = document.getElementById('detailModalOverlay');
   overlay.classList.remove('active');
   document.body.style.overflow = '';
+}
+
+function initCarousel() {
+  const track = document.getElementById('carouselTrack');
+  const dots = document.querySelectorAll('#carouselDots .carousel-dot');
+  const prev = document.getElementById('carouselPrev');
+  const next = document.getElementById('carouselNext');
+  let current = 0;
+  const total = dots.length;
+
+  function goTo(i) {
+    current = Math.max(0, Math.min(i, total - 1));
+    track.style.transform = `translateX(-${current * 100}%)`;
+    dots.forEach((d, idx) => d.classList.toggle('active', idx === current));
+  }
+
+  prev.addEventListener('click', (e) => { e.stopPropagation(); goTo(current - 1); });
+  next.addEventListener('click', (e) => { e.stopPropagation(); goTo(current + 1); });
+  dots.forEach(d => d.addEventListener('click', (e) => { e.stopPropagation(); goTo(+d.dataset.index); }));
+
+  // Touch swipe support
+  let startX = 0;
+  let dragging = false;
+  track.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; dragging = true; });
+  track.addEventListener('touchend', (e) => {
+    if (!dragging) return;
+    dragging = false;
+    const diff = startX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 40) goTo(current + (diff > 0 ? 1 : -1));
+  });
 }
 
 // Build modal item from a dining entry
@@ -342,17 +387,56 @@ function showMapInfo(marina, cat) {
       ${marina.area || ''}
       ${marina.vhf ? ' &middot; VHF ' + marina.vhf : ''}
     </div>
+    <div class="map-places-loading" id="mapPlacesLoading"><div class="loading-shimmer"></div><div class="loading-shimmer short"></div></div>
+    <div id="mapPlacesContent"></div>
     <div class="info-details">${marina.details}</div>
   `;
 
   if (marina.rates) {
     html += `<div class="info-details" style="margin-top:6px"><strong>Rates:</strong> ${marina.rates}</div>`;
   }
-
-  html += `<button class="view-details-btn" onclick="openModal(marinaToModalItem(MARINAS.find(m => m.id === '${marina.id}')))">View Details &amp; Photos</button>`;
+  if (marina.amenities) {
+    html += `<div class="info-details" style="margin-top:6px"><strong>Amenities:</strong> ${marina.amenities.join(', ')}</div>`;
+  }
+  if (marina.caution) {
+    html += `<div class="info-caution">${marina.caution}</div>`;
+  }
 
   body.innerHTML = html;
   panel.classList.add('show');
+
+  fetchPlaceData(marina.name, marina.area).then(places => {
+    const loadingEl = document.getElementById('mapPlacesLoading');
+    const contentEl = document.getElementById('mapPlacesContent');
+    if (loadingEl) loadingEl.style.display = 'none';
+    if (!places || !contentEl) return;
+
+    let ph = '';
+    if (places.photos.length) {
+      ph += `<div class="map-photos"><div class="photos-scroll">`;
+      places.photos.forEach((url, i) => {
+        ph += `<img src="${url}" alt="Photo ${i + 1}" class="place-photo" loading="lazy" />`;
+      });
+      ph += `</div></div>`;
+    }
+
+    if (places.rating) {
+      ph += `<div class="places-rating"><span class="rating-stars">${renderStars(places.rating)}</span><span class="rating-text">${places.rating}</span>`;
+      if (places.userRatingsTotal) ph += `<span class="rating-count">(${places.userRatingsTotal})</span>`;
+      ph += `</div>`;
+    }
+
+    const btns = [];
+    if (places.placeId) btns.push(`<a href="https://www.google.com/maps/place/?q=place_id:${places.placeId}" target="_blank" rel="noopener noreferrer" class="action-btn action-directions"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>Directions</a>`);
+    if (places.phone) btns.push(`<a href="tel:${places.phone}" class="action-btn action-phone"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>${places.phone}</a>`);
+    if (places.website) btns.push(`<a href="${places.website}" target="_blank" rel="noopener noreferrer" class="action-btn action-website"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>Website</a>`);
+    if (btns.length) ph += `<div class="action-buttons">${btns.join('')}</div>`;
+
+    contentEl.innerHTML = ph;
+  }).catch(() => {
+    const loadingEl = document.getElementById('mapPlacesLoading');
+    if (loadingEl) loadingEl.style.display = 'none';
+  });
 }
 
 function hideMapInfo() {

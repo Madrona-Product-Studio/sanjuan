@@ -830,7 +830,7 @@ body {
   box-shadow: var(--shadow-md);
 }
 
-/* Modal photos */
+/* Modal photos — carousel */
 .modal-photos {
   margin-top: -40px;
 }
@@ -840,23 +840,106 @@ body {
   background: var(--color-surface-cool);
 }
 
-.modal-photos .photos-scroll {
+.modal-carousel {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-surface-cool);
+}
+
+.carousel-track {
   display: flex;
-  gap: 0;
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.carousel-slide {
+  width: 100%;
+  min-width: 100%;
+  height: 280px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--color-surface-cool);
+}
+
+.carousel-dots {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  z-index: 5;
+}
+
+.carousel-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255,255,255,0.5);
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.2s ease;
+}
+
+.carousel-dot.active {
+  background: white;
+  transform: scale(1.2);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+
+.carousel-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(4px);
+  border-radius: 50%;
+  font-size: 1.3rem;
+  color: var(--color-text);
+  cursor: pointer;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  transition: all var(--transition);
+  line-height: 1;
+}
+
+.carousel-arrow:hover {
+  background: white;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.carousel-prev { left: 10px; }
+.carousel-next { right: 10px; }
+
+/* Map info panel photos — horizontal scroll */
+.map-photos {
+  margin: 12px -20px;
+  overflow: hidden;
+}
+
+.map-photos .photos-scroll {
+  display: flex;
+  gap: 8px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
+  padding: 0 20px;
 }
 
-.modal-photos .photos-scroll::-webkit-scrollbar { display: none; }
+.map-photos .photos-scroll::-webkit-scrollbar { display: none; }
 
-.modal-photos .place-photo {
-  width: 100%;
-  min-width: 100%;
-  height: 240px;
+.map-photos .place-photo {
+  width: 200px;
+  height: 140px;
   object-fit: cover;
-  border-radius: 0;
+  border-radius: var(--radius-sm);
   flex-shrink: 0;
   scroll-snap-align: start;
   background: var(--color-surface-cool);
@@ -1127,8 +1210,14 @@ body {
 
 /* === RESPONSIVE === */
 @media (max-width: 640px) {
-  .modal-photos .place-photo {
-    height: 200px;
+  .carousel-slide {
+    height: 220px;
+  }
+
+  .carousel-arrow {
+    width: 30px;
+    height: 30px;
+    font-size: 1.1rem;
   }
 
   .modal-body {
@@ -1157,7 +1246,7 @@ body {
     align-items: center;
   }
 
-  .modal-photos .place-photo {
-    height: 300px;
+  .carousel-slide {
+    height: 320px;
   }
 }
