@@ -19,8 +19,11 @@
   <nav class="tab-nav">
     <button class="tab-btn active" data-tab="map">Map</button>
     <button class="tab-btn" data-tab="islands">Islands</button>
+    <button class="tab-btn" data-tab="marine-parks">Marine Parks</button>
     <button class="tab-btn" data-tab="dining">Dining</button>
     <button class="tab-btn" data-tab="trails">Trails</button>
+    <button class="tab-btn" data-tab="farms">Farms</button>
+    <button class="tab-btn" data-tab="culture">Culture</button>
     <button class="tab-btn" data-tab="logistics">Logistics</button>
   </nav>
 
@@ -105,6 +108,39 @@
         <button class="cat-filter-btn" data-island="vendovi">Vendovi</button>
       </div>
       <div class="activity-grid" id="trailsGrid"></div>
+    </section>
+
+    <!-- MARINE PARKS PANEL -->
+    <section id="panel-marine-parks" class="tab-panel">
+      <div class="section-header">
+        <h2>Marine Parks</h2>
+        <p>Boat-access destinations worth planning a trip around</p>
+      </div>
+      <div class="activity-grid" id="marineParksGrid"></div>
+    </section>
+
+    <!-- FARMS & PRODUCERS PANEL -->
+    <section id="panel-farms" class="tab-panel">
+      <div class="section-header">
+        <h2>Farms & Producers</h2>
+        <p>Lavender fields, shellfish farms, distilleries, and tasting rooms</p>
+      </div>
+      <div class="activity-grid" id="farmsGrid"></div>
+    </section>
+
+    <!-- GALLERIES & CULTURE PANEL -->
+    <section id="panel-culture" class="tab-panel">
+      <div class="section-header">
+        <h2>Galleries & Culture</h2>
+        <p>Art, books, and creative spaces across the islands</p>
+      </div>
+      <div class="category-filter-bar">
+        <button class="cat-filter-btn active" data-island="all">All Islands</button>
+        <button class="cat-filter-btn" data-island="san-juan">San Juan</button>
+        <button class="cat-filter-btn" data-island="orcas">Orcas</button>
+        <button class="cat-filter-btn" data-island="lopez">Lopez</button>
+      </div>
+      <div class="activity-grid" id="cultureGrid"></div>
     </section>
 
     <!-- LOGISTICS PANEL -->
@@ -215,6 +251,8 @@
   <script src="data/islands.js"></script>
   <script src="data/marinas.js"></script>
   <script src="data/activities.js"></script>
+  <script src="data/marine-parks.js"></script>
+  <script src="data/farms.js"></script>
   <script src="js/app.js"></script>
 
 </body>

@@ -19,8 +19,11 @@ document.addEventListener('DOMContentLoaded', () => {
   initMap();
   initPanelGestures();
   renderIslands();
+  renderMarineParks();
   renderDining();
   renderTrails();
+  renderFarms();
+  renderCulture();
   renderLogistics();
   initModal();
 });
@@ -725,6 +728,118 @@ function difficultyColor(d) {
   if (d.includes('Difficult')) return '#b44340';
   if (d.includes('Moderate')) return '#c8956c';
   return '#3d8b6e';
+}
+
+// ========== MARINE PARKS ==========
+function marineParksToModalItem(p) {
+  const meta = [p.access, p.managingAgency];
+  let extras = '';
+  extras += `<div class="modal-extra"><strong>Moorage:</strong> ${p.moorage}</div>`;
+  if (p.camping) extras += `<div class="modal-extra"><strong>Camping:</strong> ${p.camping}</div>`;
+  if (p.trails) extras += `<div class="modal-extra"><strong>Trails:</strong> ${p.trails}</div>`;
+  if (p.water) extras += `<div class="modal-extra"><strong>Water:</strong> ${p.water}</div>`;
+  if (p.cellular) extras += `<div class="modal-extra"><strong>Cellular:</strong> ${p.cellular}</div>`;
+  if (p.seasonalNotes) extras += `<div class="info-caution">${p.seasonalNotes}</div>`;
+  if (p.hazards) extras += `<div class="info-caution">${p.hazards}</div>`;
+  return { name: p.name, meta, description: p.description, extras, placeName: p.name, placeArea: p.area };
+}
+
+function renderMarineParks() {
+  const grid = document.getElementById('marineParksGrid');
+  grid.innerHTML = MARINE_PARKS.map(p => `
+    <div class="activity-card modal-trigger" onclick="openModal(marineParksToModalItem(MARINE_PARKS.find(x => x.id === '${p.id}')))">
+      <div class="card-top-row">
+        <h4>${p.name}</h4>
+        <span class="difficulty-pill" style="background:var(--color-surface-cool);color:var(--color-text-mid)">${p.access}</span>
+      </div>
+      <div class="meta">
+        <span>${p.managingAgency}</span>
+        <span>${p.area}</span>
+      </div>
+      <p>${p.description.substring(0, 120)}${p.description.length > 120 ? '...' : ''}</p>
+      ${p.seasonalNotes ? '<div class="card-hours">' + p.seasonalNotes + '</div>' : ''}
+    </div>
+  `).join('');
+}
+
+// ========== FARMS & PRODUCERS ==========
+function farmToModalItem(f) {
+  const meta = [f.type, f.area];
+  if (f.price) meta.push(f.price);
+  let extras = '';
+  if (f.hours) extras += `<div class="modal-extra"><strong>Hours:</strong> ${f.hours}</div>`;
+  if (f.seasonalNotes) extras += `<div class="info-caution">${f.seasonalNotes}</div>`;
+  return { name: f.name, meta, description: f.description, extras, placeName: f.name, placeArea: f.area };
+}
+
+function renderFarms() {
+  const grid = document.getElementById('farmsGrid');
+
+  // Dedicated farm entries
+  let items = FARMS.map(f => `
+    <div class="activity-card modal-trigger" onclick="openModal(farmToModalItem(FARMS.find(x => x.id === '${f.id}')))">
+      <div class="card-top-row">
+        <h4>${f.name}</h4>
+        <span class="difficulty-pill" style="background:var(--color-surface-cool);color:var(--color-text-mid)">${f.type}</span>
+      </div>
+      <div class="meta">
+        <span>${f.area}</span>
+        ${f.hours ? '<span>' + f.hours + '</span>' : ''}
+      </div>
+      <p>${f.description}</p>
+    </div>
+  `);
+
+  // Cross-listed dining entries with producer: true
+  const producers = DINING.filter(d => d.producer);
+  items = items.concat(producers.map(d => `
+    <div class="activity-card modal-trigger" onclick="openModal(diningToModalItem(DINING.find(x => x.id === '${d.id}')))">
+      <div class="card-top-row">
+        <h4>${d.name}</h4>
+        <span class="price-badge price-${d.price.length}">${d.price}</span>
+      </div>
+      <div class="meta">
+        <span>${d.cuisine}</span>
+        <span>${d.area}</span>
+        ${d.walkFromDock ? '<span>' + d.walkFromDock + ' from dock</span>' : ''}
+      </div>
+      <p>${d.description}</p>
+    </div>
+  `));
+
+  grid.innerHTML = items.join('');
+}
+
+// ========== GALLERIES & CULTURE ==========
+let activeCultureFilter = 'all';
+
+function renderCulture() {
+  const grid = document.getElementById('cultureGrid');
+  renderCultureCards(grid, 'all');
+
+  document.querySelectorAll('#panel-culture .cat-filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      activeCultureFilter = btn.dataset.island;
+      document.querySelectorAll('#panel-culture .cat-filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderCultureCards(grid, activeCultureFilter);
+    });
+  });
+}
+
+function renderCultureCards(container, filter) {
+  const items = filter === 'all' ? GALLERIES : GALLERIES.filter(g => g.island === filter);
+  container.innerHTML = items.map(g => `
+    <div class="activity-card modal-trigger" onclick="openModal(galleryToModalItem(GALLERIES.find(x => x.id === '${g.id}')))">
+      <h4>${g.name}</h4>
+      <div class="meta">
+        <span>${g.type ? g.type.replace('_', ' ') : 'gallery'}</span>
+        <span>${g.area}</span>
+        ${g.walkFromDock ? '<span>' + g.walkFromDock + ' from dock</span>' : ''}
+      </div>
+      <p>${g.description}</p>
+    </div>
+  `).join('');
 }
 
 // ========== LOGISTICS ==========
