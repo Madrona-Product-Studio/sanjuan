@@ -54,12 +54,11 @@
         </div>
 
         <div class="map-info-panel" id="mapInfoPanel">
-          <div class="handle" onclick="hideMapInfo()"></div>
-          <div class="info-body">
-            <h3>Select a marker</h3>
-            <p>Tap any marina marker for details.</p>
+          <div class="handle-zone" id="panelHandle">
+            <div class="handle-bar"></div>
           </div>
-          <button class="close-btn" onclick="hideMapInfo()">Close</button>
+          <div class="peek-content" id="peekContent"></div>
+          <div class="expanded-content" id="expandedContent"></div>
         </div>
       </div>
     </section>
