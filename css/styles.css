@@ -826,6 +826,27 @@ body {
   color: var(--color-accent);
 }
 
+/* === FOOTER === */
+.site-footer {
+  padding: 20px;
+  text-align: center;
+}
+
+.footer-credit {
+  font-size: 0.78rem;
+  color: var(--color-text-light);
+}
+
+.footer-credit a {
+  color: #C4502A;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.footer-credit a:hover {
+  text-decoration: underline;
+}
+
 /* === RESPONSIVE === */
 @media (max-width: 640px) {
   .site-header { padding: 0 16px; }
