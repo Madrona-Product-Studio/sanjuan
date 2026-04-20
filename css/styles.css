@@ -59,6 +59,9 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 /* === HEADER === */
@@ -826,6 +829,11 @@ body {
   color: var(--color-accent);
 }
 
+/* === MAIN FLEX GROW === */
+.main-content {
+  flex: 1;
+}
+
 /* === FOOTER === */
 .site-footer {
   display: flex;
@@ -837,6 +845,7 @@ body {
   font-size: 0.76rem;
   flex-wrap: wrap;
   gap: 8px;
+  margin-top: auto;
 }
 
 .footer-copy {
