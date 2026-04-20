@@ -89,6 +89,8 @@ body {
   letter-spacing: -0.02em;
   white-space: nowrap;
   color: var(--color-primary);
+  text-decoration: none;
+  cursor: pointer;
 }
 
 .site-header .logo span {
