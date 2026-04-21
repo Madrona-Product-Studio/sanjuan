@@ -1,10 +1,10 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 // FEEDBACK WIDGET — vanilla JS, structured sentiment + tags + open text
-// Sends feedback via Web3Forms to feedback@madronaproduct.com
+// Sends feedback via Resend API (lilatrips.com/api/send-feedback)
 // ═══════════════════════════════════════════════════════════════════════════════
 
 (function() {
-  const WEB3FORMS_KEY = '0d48df75-d380-4710-817b-4bf6c56b7386';
+  const FEEDBACK_API = 'https://www.lilatrips.com/api/send-feedback';
   const SOURCE = 'San Juan Trip';
 
   const TAG_SETS = {
@@ -195,21 +195,19 @@
 
     const textEl = document.getElementById('mps-fb-text');
     const text = textEl ? textEl.value.trim() : '';
-    const lines = [
-      'Sentiment: ' + LABELS[selectedSentiment],
-      selectedTag ? 'Tag: ' + selectedTag : null,
-      'Page: ' + window.location.pathname,
-      '', text || '(no comment)',
-    ].filter(Boolean).join('\\n');
 
     try {
-      const fd = new FormData();
-      fd.append('access_key', WEB3FORMS_KEY);
-      fd.append('subject', SOURCE + ' — Feedback (' + LABELS[selectedSentiment].toLowerCase() + ')');
-      fd.append('message', lines);
-      fd.append('from_name', SOURCE + ' User');
-
-      const res = await fetch('https://api.web3forms.com/submit', { method: 'POST', body: fd });
+      const res = await fetch(FEEDBACK_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          source: SOURCE,
+          sentiment: selectedSentiment,
+          tag: selectedTag,
+          text: text,
+          pathname: window.location.pathname,
+        }),
+      });
       const result = await res.json();
 
       if (result.success) {
