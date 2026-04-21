@@ -41,14 +41,13 @@
     #mps-fb-btn {
       position: fixed; bottom: 24px; right: 24px; z-index: 9000;
       width: 44px; height: 44px; border-radius: 50%;
-      border: 0.5px solid rgba(255,255,255,0.2);
-      background: rgba(255,255,255,0.35); backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px); color: rgba(255,255,255,0.85);
+      border: none;
+      background: #2c3e50; color: white;
       cursor: pointer; display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06);
-      transition: opacity 0.25s, transform 0.2s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15), 0 1px 3px rgba(0,0,0,0.1);
+      transition: opacity 0.25s, transform 0.2s, background 0.2s;
     }
-    #mps-fb-btn:hover { transform: translateY(-1px); color: white; border-color: rgba(255,255,255,0.35); }
+    #mps-fb-btn:hover { transform: translateY(-1px); background: #3d5265; }
     #mps-fb-overlay {
       position: fixed; inset: 0; z-index: 9500;
       background: rgba(0,0,0,0.08); backdrop-filter: blur(2px);
