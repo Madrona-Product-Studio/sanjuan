@@ -327,6 +327,10 @@ function initMap() {
 
   renderMapMarkers('all');
   initMapFilters();
+
+  // Fit map to show all markers with padding
+  const bounds = L.latLngBounds(MARINAS.map(m => [m.lat, m.lng]));
+  map.fitBounds(bounds, { padding: [30, 30] });
 }
 
 function renderMapMarkers(filter) {
