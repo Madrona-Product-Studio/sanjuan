@@ -236,14 +236,16 @@ body {
 .map-filters {
   position: absolute;
   top: 14px;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 12px;
+  right: 12px;
   display: flex;
   align-items: center;
   gap: 5px;
   z-index: 800;
   flex-wrap: nowrap;
-  justify-content: center;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
   background: rgba(255,255,255,0.92);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -252,6 +254,8 @@ body {
   box-shadow: var(--shadow-md);
   border: 1px solid var(--color-border-light);
 }
+
+.map-filters::-webkit-scrollbar { display: none; }
 
 .filter-divider {
   width: 1px;
