@@ -17,7 +17,7 @@ let activePlacesController = null;
 document.addEventListener('DOMContentLoaded', () => {
   initTabs();
   initMap();
-  initPanelGestures();
+  initMapCard();
   renderIslands();
   renderMarineParks();
   renderDining();
@@ -363,7 +363,7 @@ function renderMapMarkers(filter) {
 
     marker.on('click', (e) => {
       e.originalEvent.stopPropagation();
-      showMapInfo(marina, cat);
+      showMapCard(marina, cat);
     });
 
     if (window.innerWidth >= 768) {
@@ -397,145 +397,71 @@ function initMapFilters() {
       document.querySelectorAll('.map-filter-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       renderMapMarkers(filter);
-      setPanelState('hidden');
+      hideMapCard();
     });
   });
 }
 
-let panelState = 'hidden'; // hidden | peek | expanded
 let currentMarinaId = null;
+let currentMarinaData = null;
 
-function showMapInfo(marina, cat) {
-  const panel = document.getElementById('mapInfoPanel');
-  const peekEl = document.getElementById('peekContent');
-  const expandedEl = document.getElementById('expandedContent');
+function showMapCard(marina, cat) {
+  const card = document.getElementById('mapCard');
+  const nameEl = document.getElementById('mapCardName');
+  const metaEl = document.getElementById('mapCardMeta');
+  const photoEl = document.getElementById('mapCardPhoto');
 
-  // If same marina tapped, toggle expand
-  if (currentMarinaId === marina.id && panelState === 'peek') {
-    setPanelState('expanded');
-    return;
-  }
-  if (currentMarinaId === marina.id && panelState === 'expanded') {
-    setPanelState('peek');
+  // If same marina tapped while visible, hide
+  if (currentMarinaId === marina.id && card.classList.contains('visible')) {
+    hideMapCard();
     return;
   }
 
   currentMarinaId = marina.id;
+  currentMarinaData = { marina, cat };
 
-  // Peek content
-  peekEl.innerHTML = `
-    <h3>${marina.name}</h3>
-    <div class="peek-meta">
-      <span class="category-badge" style="background:${cat.color}">${cat.label}</span>
-      ${marina.area || ''}
-      ${marina.vhf ? ' &middot; VHF ' + marina.vhf : ''}
-    </div>
-    <div class="peek-hint">Tap for details</div>
+  nameEl.textContent = marina.name;
+  metaEl.innerHTML = `
+    <span class="category-badge" style="background:${cat.color}">${cat.label}</span>
+    ${marina.area || ''}
   `;
 
-  // Expanded content
-  let exHtml = '';
-  exHtml += `<div class="map-places-loading" id="mapPlacesLoading"><div class="loading-shimmer"></div><div class="loading-shimmer short"></div></div>`;
-  exHtml += `<div id="mapPlacesContent"></div>`;
-  exHtml += `<div class="info-details">${marina.details}</div>`;
+  // Placeholder tint until photo loads
+  photoEl.style.backgroundImage = '';
+  photoEl.style.backgroundColor = cat.color + '22';
 
-  if (marina.rates) {
-    exHtml += `<div class="info-details" style="margin-top:6px"><strong>Rates:</strong> ${marina.rates}</div>`;
-  }
-  if (marina.amenities) {
-    exHtml += `<div class="info-details" style="margin-top:6px"><strong>Amenities:</strong> ${marina.amenities.join(', ')}</div>`;
-  }
-  if (marina.caution) {
-    exHtml += `<div class="info-caution">${marina.caution}</div>`;
-  }
+  card.classList.add('visible');
 
-  exHtml += `<button class="modal-open-btn" onclick="event.stopPropagation(); openModal(marinaToModalItem(MARINAS.find(m => m.id === '${marina.id}')))">View All Photos &amp; Details</button>`;
-
-  expandedEl.innerHTML = exHtml;
-  setPanelState('peek');
-
-  // Prefetch Places data
+  // Fetch photo from Places API
   fetchPlaceData(marina.name, marina.area).then(places => {
-    const loadingEl = document.getElementById('mapPlacesLoading');
-    const contentEl = document.getElementById('mapPlacesContent');
-    if (loadingEl) loadingEl.classList.add('hidden');
-    if (!places || !contentEl) return;
-
-    let ph = '';
-    if (places.photos.length) {
-      ph += `<div class="map-photos" id="mapPhotos"><div class="photos-scroll">`;
-      places.photos.forEach((url, i) => {
-        ph += `<img src="${url}" alt="Photo ${i + 1}" class="place-photo" loading="lazy" />`;
-      });
-      ph += `</div></div>`;
+    if (currentMarinaId !== marina.id) return;
+    if (places && places.photos && places.photos.length > 0) {
+      photoEl.style.backgroundImage = `url(${places.photos[0]})`;
     }
-
-    if (places.rating) {
-      ph += `<div class="places-rating"><span class="rating-stars">${renderStars(places.rating)}</span><span class="rating-text">${places.rating}</span>`;
-      if (places.userRatingsTotal) ph += `<span class="rating-count">(${places.userRatingsTotal})</span>`;
-      ph += `</div>`;
-    }
-
-    const btns = [];
-    if (places.placeId) btns.push(`<a href="https://www.google.com/maps/place/?q=place_id:${places.placeId}" target="_blank" rel="noopener noreferrer" class="action-btn action-directions"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>Directions</a>`);
-    if (places.phone) btns.push(`<a href="tel:${places.phone}" class="action-btn action-phone"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>${places.phone}</a>`);
-    if (places.website) btns.push(`<a href="${places.website}" target="_blank" rel="noopener noreferrer" class="action-btn action-website"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>Website</a>`);
-    if (btns.length) ph += `<div class="action-buttons">${btns.join('')}</div>`;
-
-    contentEl.innerHTML = ph;
-    requestAnimationFrame(() => {
-      contentEl.classList.add('loaded');
-      const mapPhotos = document.getElementById('mapPhotos');
-      if (mapPhotos) mapPhotos.classList.add('loaded');
-    });
-  }).catch(() => {
-    const loadingEl = document.getElementById('mapPlacesLoading');
-    if (loadingEl) loadingEl.classList.add('hidden');
-  });
+  }).catch(() => {});
 }
 
-function setPanelState(state) {
-  const panel = document.getElementById('mapInfoPanel');
-  if (state === 'hidden') {
-    panel.classList.remove('peek', 'expanded');
-    currentMarinaId = null;
-  } else {
-    // Swap classes directly to avoid a flash through the hidden (no-class) state
-    const old = panelState === 'peek' ? 'peek' : 'expanded';
-    panel.classList.remove(old);
-    panel.classList.add(state);
-  }
-  panelState = state;
+function hideMapCard() {
+  const card = document.getElementById('mapCard');
+  card.classList.remove('visible');
+  currentMarinaId = null;
+  currentMarinaData = null;
 }
 
-function hideMapInfo() {
-  setPanelState('hidden');
-}
+function initMapCard() {
+  const card = document.getElementById('mapCard');
+  const closeBtn = document.getElementById('mapCardClose');
 
-function initPanelGestures() {
-  const handle = document.getElementById('panelHandle');
-  const peek = document.getElementById('peekContent');
-  let startY = 0;
-
-  handle.addEventListener('touchstart', (e) => {
-    if (panelState === 'hidden') return;
-    startY = e.touches[0].clientY;
-  }, { passive: true });
-
-  handle.addEventListener('touchend', (e) => {
-    if (panelState === 'hidden') return;
-    const diff = e.changedTouches[0].clientY - startY;
-    if (diff > 30) {
-      if (panelState === 'expanded') setPanelState('peek');
-      else setPanelState('hidden');
-    } else if (diff < -30) {
-      if (panelState === 'peek') setPanelState('expanded');
-    }
+  closeBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    hideMapCard();
   });
 
-  // Tap peek to expand
-  peek.addEventListener('click', () => {
-    if (panelState === 'peek') setPanelState('expanded');
+  // Tapping card opens full detail modal
+  card.addEventListener('click', () => {
+    if (!currentMarinaData) return;
+    const item = marinaToModalItem(currentMarinaData.marina);
+    openModal(item);
   });
 }
 
@@ -854,8 +780,7 @@ function renderLogistics() {
 
 // ========== MAP CLICK HANDLER ==========
 document.addEventListener('click', (e) => {
-  if (activeTab === 'map' && !e.target.closest('.map-info-panel') && !e.target.closest('.leaflet-interactive')) {
-    if (panelState === 'expanded') setPanelState('peek');
-    else if (panelState === 'peek') setPanelState('hidden');
+  if (activeTab === 'map' && !e.target.closest('.map-card') && !e.target.closest('.leaflet-interactive')) {
+    hideMapCard();
   }
 });
