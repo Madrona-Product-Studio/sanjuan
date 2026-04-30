@@ -489,10 +489,16 @@ function showMapInfo(marina, cat) {
 
 function setPanelState(state) {
   const panel = document.getElementById('mapInfoPanel');
-  panel.classList.remove('peek', 'expanded');
-  if (state !== 'hidden') panel.classList.add(state);
+  if (state === 'hidden') {
+    panel.classList.remove('peek', 'expanded');
+    currentMarinaId = null;
+  } else {
+    // Swap classes directly to avoid a flash through the hidden (no-class) state
+    const old = panelState === 'peek' ? 'peek' : 'expanded';
+    panel.classList.remove(old);
+    panel.classList.add(state);
+  }
   panelState = state;
-  if (state === 'hidden') currentMarinaId = null;
 }
 
 function hideMapInfo() {
