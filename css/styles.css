@@ -188,6 +188,7 @@ body {
 .leaflet-control-zoom {
   border: none !important;
   box-shadow: none !important;
+  margin-top: 52px !important;
 }
 
 .leaflet-control-zoom a + a { margin-top: 4px !important; }
@@ -936,6 +937,7 @@ body {
   overscroll-behavior: contain;
   transform: translateY(100%);
   transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
   position: relative;
 }
 

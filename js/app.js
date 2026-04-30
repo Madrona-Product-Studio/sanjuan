@@ -119,8 +119,11 @@ function openModal(item) {
   photosEl.innerHTML = '<div class="modal-photos-placeholder"></div>';
   bodyEl.innerHTML = bodyHtml;
 
-  overlay.classList.add('active');
+  // Lock scroll first so mobile browser chrome settles before animating
   document.body.style.overflow = 'hidden';
+  // Force reflow so viewport units stabilize before transition starts
+  void overlay.offsetHeight;
+  overlay.classList.add('active');
 
   // Fetch Places data
   if (item.placeName && item.placeArea) {
