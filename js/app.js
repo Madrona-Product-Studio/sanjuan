@@ -309,7 +309,7 @@ function switchTab(tab) {
   }
   // Hide feedback button on map tab to avoid overlapping map controls
   const fbBtn = document.getElementById('mps-fb-btn');
-  if (fbBtn) fbBtn.style.display = tab === 'map' ? 'none' : '';
+  if (fbBtn) fbBtn.style.setProperty('display', tab === 'map' ? 'none' : 'flex', 'important');
   if (tab === 'islands') {
     hideIslandDetail();
   }

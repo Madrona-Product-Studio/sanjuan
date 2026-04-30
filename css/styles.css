@@ -4,7 +4,7 @@
    ============================================ */
 
 /* Hide feedback button on map tab (default) — shown via JS on tab switch */
-#mps-fb-btn { display: none; }
+#mps-fb-btn { display: none !important; }
 
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap');
 
