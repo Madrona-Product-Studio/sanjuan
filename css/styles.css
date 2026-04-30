@@ -191,7 +191,6 @@ body {
 .leaflet-control-zoom {
   border: none !important;
   box-shadow: none !important;
-  margin-top: 52px !important;
 }
 
 .leaflet-control-zoom a + a { margin-top: 4px !important; }
@@ -236,62 +235,6 @@ body {
   box-shadow: 0 0 0 2px rgba(255,255,255,0.9), 0 1px 3px rgba(0,0,0,0.15);
 }
 
-.map-filters {
-  position: absolute;
-  top: 14px;
-  left: 12px;
-  right: 12px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  z-index: 800;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  background: rgba(255,255,255,0.92);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  padding: 6px 8px;
-  border-radius: 28px;
-  box-shadow: var(--shadow-md);
-  border: 1px solid var(--color-border-light);
-}
-
-.map-filters::-webkit-scrollbar { display: none; }
-
-.filter-divider {
-  width: 1px;
-  height: 18px;
-  background: var(--color-border);
-  flex-shrink: 0;
-  margin: 0 2px;
-}
-
-.map-filter-btn {
-  padding: 5px 12px;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 0.72rem;
-  font-weight: 500;
-  letter-spacing: 0;
-  border: 1px solid transparent;
-  border-radius: 16px;
-  cursor: pointer;
-  background: transparent;
-  color: var(--color-text-mid);
-  transition: all var(--transition);
-}
-
-.map-filter-btn:hover {
-  background: var(--color-surface-cool);
-  color: var(--color-primary);
-}
-
-.map-filter-btn.active {
-  background: var(--color-primary);
-  color: white;
-  box-shadow: 0 2px 8px rgba(15,43,60,0.2);
-}
 
 /* === MAP CARD (Airbnb-style compact card) === */
 .map-card {
@@ -827,8 +770,6 @@ body {
   .activity-grid { grid-template-columns: 1fr; padding: 0 16px 32px; }
   .category-filter-bar { padding: 6px 16px 12px; }
   .logistics-section { padding: 0 16px 32px; }
-  .map-filters { padding: 5px 6px; gap: 3px; }
-  .map-filter-btn { padding: 5px 10px; font-size: 0.68rem; }
 }
 
 @media (min-width: 1024px) {

@@ -7,7 +7,6 @@ let map = null;
 let markers = [];
 let activeTab = 'map';
 let activeIsland = null;
-let activeMapFilter = 'all';
 let activeDiningFilter = 'all';
 let activeTrailFilter = 'all';
 const placesCache = {};
@@ -340,7 +339,6 @@ function initMap() {
   }).addTo(map);
 
   renderMapMarkers('all');
-  initMapFilters();
 
   // Fit map to show all markers with padding
   map.fitBounds(markerBounds, { padding: [30, 30] });
@@ -378,32 +376,6 @@ function renderMapMarkers(filter) {
   });
 }
 
-function initMapFilters() {
-  document.querySelectorAll('.map-filter-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const filter = btn.dataset.filter;
-
-      if (filter === 'bellingham') {
-        map.setView([48.65, -122.60], 11);
-        return;
-      }
-      if (filter === 'main-islands') {
-        map.setView([48.58, -122.95], 10);
-        return;
-      }
-      if (filter === 'outer') {
-        map.setView([48.74, -122.88], 11);
-        return;
-      }
-
-      activeMapFilter = filter;
-      document.querySelectorAll('.map-filter-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      renderMapMarkers(filter);
-      hideMapCard();
-    });
-  });
-}
 
 let currentMarinaId = null;
 let currentMarinaData = null;
