@@ -308,6 +308,9 @@ function switchTab(tab) {
   if (tab === 'map' && map) {
     setTimeout(() => map.invalidateSize(), 100);
   }
+  // Hide feedback button on map tab to avoid overlapping map controls
+  const fbBtn = document.getElementById('mps-fb-btn');
+  if (fbBtn) fbBtn.style.display = tab === 'map' ? 'none' : '';
   if (tab === 'islands') {
     hideIslandDetail();
   }
