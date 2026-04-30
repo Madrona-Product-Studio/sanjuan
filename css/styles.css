@@ -303,7 +303,7 @@ body {
 }
 
 .map-info-panel.peek {
-  transform: translateY(calc(100% - 90px));
+  transform: translateY(calc(100% - 140px));
 }
 
 .map-info-panel.expanded {
@@ -1436,7 +1436,7 @@ body {
   }
 
   .map-info-panel.peek {
-    transform: translateY(calc(100% - 85px));
+    transform: translateY(calc(100% - 140px));
   }
 }
 
