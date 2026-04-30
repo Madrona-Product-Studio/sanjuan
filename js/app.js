@@ -315,12 +315,20 @@ function switchTab(tab) {
 
 // ========== MAP ==========
 function initMap() {
+  // Compute bounds from markers, then constrain the map to this region
+  const markerBounds = L.latLngBounds(MARINAS.map(m => [m.lat, m.lng]));
+  // Pad the bounds so you can pan a bit beyond the outermost markers
+  const maxBounds = markerBounds.pad(0.5);
+
   map = L.map('map', {
     center: [48.58, -122.95],
     zoom: 10,
     zoomControl: true,
     touchZoom: true,
-    scrollWheelZoom: true
+    scrollWheelZoom: true,
+    maxBounds: maxBounds,
+    maxBoundsViscosity: 0.8,
+    minZoom: 9
   });
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -332,8 +340,7 @@ function initMap() {
   initMapFilters();
 
   // Fit map to show all markers with padding
-  const bounds = L.latLngBounds(MARINAS.map(m => [m.lat, m.lng]));
-  map.fitBounds(bounds, { padding: [30, 30] });
+  map.fitBounds(markerBounds, { padding: [30, 30] });
 }
 
 function renderMapMarkers(filter) {
