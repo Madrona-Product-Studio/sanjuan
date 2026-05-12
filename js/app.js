@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderCulture();
   renderLogistics();
   initModal();
+  initWeatherModal();
 });
 
 // ========== GOOGLE PLACES ==========
@@ -751,6 +752,180 @@ function renderCultureCards(container, filter) {
 // ========== LOGISTICS ==========
 function renderLogistics() {
   // Static content rendered in HTML
+}
+
+// ========== WEATHER MODAL ==========
+let weatherData = null;
+let weatherFetching = false;
+
+function initWeatherModal() {
+  const overlay = document.getElementById('weatherModalOverlay');
+  const closeBtn = document.getElementById('weatherModalClose');
+
+  closeBtn.addEventListener('click', closeWeatherModal);
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) closeWeatherModal();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && overlay.classList.contains('active')) closeWeatherModal();
+  });
+}
+
+function openWeatherModal() {
+  const overlay = document.getElementById('weatherModalOverlay');
+  document.body.style.overflow = 'hidden';
+  void overlay.offsetHeight;
+  overlay.classList.add('active');
+
+  if (!weatherData && !weatherFetching) {
+    fetchWeatherData();
+  }
+}
+
+function closeWeatherModal() {
+  const overlay = document.getElementById('weatherModalOverlay');
+  overlay.classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+async function fetchWeatherData() {
+  weatherFetching = true;
+  try {
+    const res = await fetch('/api/weather');
+    if (!res.ok) throw new Error('Failed to fetch');
+    weatherData = await res.json();
+    renderWeatherModal(weatherData);
+  } catch (err) {
+    document.getElementById('weatherModalBody').innerHTML =
+      '<div class="wx-no-data">Unable to load conditions. Please try again later.</div>';
+  } finally {
+    weatherFetching = false;
+  }
+}
+
+function renderWeatherModal(data) {
+  const body = document.getElementById('weatherModalBody');
+  let html = '';
+
+  // ── Alerts ──
+  if (data.alerts && data.alerts.length) {
+    html += '<div class="wx-section">';
+    html += '<div class="wx-section-title">Active Alerts</div>';
+    data.alerts.forEach(a => {
+      html += `<div class="wx-alert">
+        <div class="wx-alert-event">${esc(a.event)}</div>
+        <div class="wx-alert-headline">${esc(a.headline || '')}</div>
+        ${a.description ? `<div class="wx-alert-details">${esc(a.description).substring(0, 500)}</div>` : ''}
+      </div>`;
+    });
+    html += '</div>';
+  }
+
+  // ── Wind ──
+  if (data.wind) {
+    const w = data.wind;
+    const arrowDeg = w.direction != null ? (w.direction + 180) % 360 : 0;
+    html += '<div class="wx-section">';
+    html += '<div class="wx-section-title">Wind</div>';
+    html += `<div class="wx-wind-card">
+      <div class="wx-wind-compass">
+        <svg class="wx-wind-arrow" style="transform:rotate(${arrowDeg}deg)" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2L6 18h12L12 2z"/>
+        </svg>
+      </div>
+      <div class="wx-wind-info">
+        <div class="wx-wind-speed">${w.speed}<small> kt</small>${w.gust ? ` <span style="font-size:0.78rem;color:var(--color-text-mid);font-weight:500">gusting ${w.gust} kt</span>` : ''}</div>
+        <div class="wx-wind-detail">From the ${w.directionCompass || '—'} (${w.direction != null ? w.direction + '°' : '—'})</div>
+        <div class="wx-wind-station">NOAA ${esc(w.station)} Station</div>
+      </div>
+    </div>`;
+
+    // Pressure + air temp row
+    const chips = [];
+    if (w.pressure != null) {
+      chips.push(`<div class="wx-condition-chip"><div class="wx-condition-value">${w.pressure}"</div><div class="wx-condition-label">Barometer</div></div>`);
+    } else if (data.pressure) {
+      chips.push(`<div class="wx-condition-chip"><div class="wx-condition-value">${data.pressure.pressure}"</div><div class="wx-condition-label">Barometer</div></div>`);
+    }
+    if (w.airTemp != null) {
+      chips.push(`<div class="wx-condition-chip"><div class="wx-condition-value">${w.airTemp}°F</div><div class="wx-condition-label">Air Temp</div></div>`);
+    }
+    if (data.waterTemp) {
+      chips.push(`<div class="wx-condition-chip"><div class="wx-condition-value">${data.waterTemp.tempF}°F</div><div class="wx-condition-label">Water Temp</div></div>`);
+    }
+    if (chips.length) {
+      html += `<div class="wx-conditions-row">${chips.join('')}</div>`;
+    }
+    html += '</div>';
+  } else {
+    // Still show water temp if no wind
+    if (data.waterTemp) {
+      html += '<div class="wx-section">';
+      html += '<div class="wx-section-title">Conditions</div>';
+      html += `<div class="wx-conditions-row">
+        <div class="wx-condition-chip"><div class="wx-condition-value">${data.waterTemp.tempF}°F</div><div class="wx-condition-label">Water Temp</div></div>
+      </div>`;
+      html += '</div>';
+    }
+  }
+
+  // ── Tides ──
+  if (data.tides && data.tides.length) {
+    html += '<div class="wx-section">';
+    html += '<div class="wx-section-title">Tides — Friday Harbor</div>';
+    html += '<div class="wx-tides">';
+    data.tides.forEach(t => {
+      const timeStr = formatTideTime(t.time);
+      const typeClass = t.type === 'High' ? 'high' : 'low';
+      html += `<div class="wx-tide">
+        <div class="wx-tide-type ${typeClass}">${t.type}</div>
+        <div class="wx-tide-height">${t.height.toFixed(1)}<small> ft</small></div>
+        <div class="wx-tide-time">${timeStr}</div>
+      </div>`;
+    });
+    html += '</div>';
+    html += '<div class="wx-tide-station">NOAA Station #9449880 — Datum: MLLW</div>';
+    html += '</div>';
+  }
+
+  // ── Marine Forecast ──
+  if (data.forecast && data.forecast.length) {
+    html += '<div class="wx-section">';
+    html += '<div class="wx-section-title">Marine Forecast — NWS Zone PZZ135</div>';
+    data.forecast.forEach(p => {
+      html += `<div class="wx-forecast-period">
+        <div class="wx-forecast-name">${esc(p.name)}</div>
+        <div class="wx-forecast-text">${esc(p.forecast)}</div>
+      </div>`;
+    });
+    html += '</div>';
+  }
+
+  body.innerHTML = html;
+
+  // Update timestamp
+  if (data.fetchedAt) {
+    const d = new Date(data.fetchedAt);
+    document.getElementById('weatherUpdatedAt').textContent =
+      'Updated ' + d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  }
+}
+
+function formatTideTime(timeStr) {
+  // timeStr like "2024-05-11 06:32"
+  const parts = timeStr.split(' ');
+  if (parts.length < 2) return timeStr;
+  const [h, m] = parts[1].split(':');
+  const hour = parseInt(h, 10);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const h12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+  return `${h12}:${m} ${ampm}`;
+}
+
+function esc(str) {
+  const el = document.createElement('span');
+  el.textContent = str;
+  return el.innerHTML;
 }
 
 // ========== MAP CLICK HANDLER ==========
