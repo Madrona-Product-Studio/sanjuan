@@ -104,6 +104,12 @@ body {
   cursor: pointer;
 }
 
+.site-header .logo h1 {
+  font: inherit;
+  letter-spacing: inherit;
+  margin: 0;
+}
+
 .site-header .logo span {
   font-weight: 300;
   color: var(--color-text-light);

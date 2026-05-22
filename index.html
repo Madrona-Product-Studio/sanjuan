@@ -6,6 +6,8 @@
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <title>San Juan Islands Boating Guide</title>
   <meta name="description" content="Anchorages, marinas, and local knowledge for cruising the San Juan Islands.">
+  <link rel="canonical" href="https://sanjuan-guide.vercel.app/">
+  <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
   <meta property="og:type" content="website">
   <meta property="og:title" content="San Juan Islands Boating Guide">
   <meta property="og:description" content="Anchorages, marinas, and local knowledge for cruising the San Juan Islands.">
@@ -29,7 +31,7 @@
 
   <!-- ===== HEADER ===== -->
   <header class="site-header">
-    <a class="logo" href="#" onclick="switchTab('map'); return false;">San Juan Islands <span>Boating Guide</span></a>
+    <a class="logo" href="/" onclick="switchTab('map'); return false;"><h1>San Juan Islands <span>Boating Guide</span></h1></a>
     <button class="weather-btn" id="weatherBtn" onclick="openWeatherModal()" aria-label="Current conditions">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/></svg>
       <span class="weather-btn-label">Live Conditions</span>
