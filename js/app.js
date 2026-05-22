@@ -39,6 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initModal();
   initWeatherModal();
   initRouter();
+  initWelcomeModal();
 });
 
 // ========== ROUTING ==========
@@ -1014,6 +1015,65 @@ function esc(str) {
   const el = document.createElement('span');
   el.textContent = str;
   return el.innerHTML;
+}
+
+// ========== WELCOME MODAL ==========
+function initWelcomeModal() {
+  if (localStorage.getItem('sji-welcomed')) return;
+  const overlay = document.getElementById('welcomeOverlay');
+  if (!overlay) return;
+
+  setTimeout(() => overlay.classList.add('active'), 500);
+
+  function dismiss() {
+    overlay.classList.remove('active');
+    localStorage.setItem('sji-welcomed', '1');
+  }
+
+  document.getElementById('welcomeStart').addEventListener('click', dismiss);
+  document.getElementById('welcomeClose').addEventListener('click', dismiss);
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) dismiss();
+  });
+
+  // Fetch weather summary for welcome modal
+  fetchWelcomeWeather();
+}
+
+async function fetchWelcomeWeather() {
+  const container = document.getElementById('welcomeWeather');
+  if (!container) return;
+  try {
+    const res = await fetch('/api/weather');
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+
+    const parts = [];
+    if (data.wind && data.wind.speed != null) {
+      let wind = data.wind.speed + ' kt';
+      if (data.wind.directionCompass) wind = data.wind.directionCompass + ' ' + wind;
+      if (data.wind.gust) wind += ', gusts ' + data.wind.gust + ' kt';
+      parts.push(wind);
+    }
+    if (data.waterTemp && data.waterTemp.tempF != null) {
+      parts.push('Water ' + Math.round(data.waterTemp.tempF) + '°F');
+    }
+    if (data.wind && data.wind.airTemp != null) {
+      parts.push('Air ' + Math.round(data.wind.airTemp) + '°F');
+    }
+
+    if (parts.length) {
+      container.innerHTML = `
+        <div class="welcome-weather-summary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/></svg>
+          <span><strong>Current conditions:</strong> ${parts.join(' · ')}</span>
+        </div>`;
+    } else {
+      container.style.display = 'none';
+    }
+  } catch {
+    container.style.display = 'none';
+  }
 }
 
 // ========== MAP CLICK HANDLER ==========
