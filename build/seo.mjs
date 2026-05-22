@@ -2,7 +2,7 @@
  * SEO metadata and JSON-LD generators for each route.
  */
 
-const BASE_URL = 'https://sanjuan-guide.vercel.app';
+const BASE_URL = 'https://sjiboating.com';
 
 export const ROUTE_META = {
   '/': {

@@ -90,7 +90,7 @@ function updateMeta(tab, islandId) {
   const canonTag = document.querySelector('link[rel="canonical"]');
   if (canonTag) {
     const path = tab === 'map' ? '/' : islandId ? `/islands/${islandId}` : `/${tab}`;
-    canonTag.setAttribute('href', 'https://sanjuan-guide.vercel.app' + path);
+    canonTag.setAttribute('href', 'https://sjiboating.com' + path);
   }
   // OG tags
   const ogTitle = document.querySelector('meta[property="og:title"]');

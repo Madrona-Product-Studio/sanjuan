@@ -18,4 +18,4 @@ Content organized by island and by marina across five tabs — Map, Islands, Din
 
 ## Status
 
-Live at [sanjuan-guide.vercel.app](https://sanjuan-guide.vercel.app) — shared with cruising boaters for feedback.
+Live at [sjiboating.com](https://sjiboating.com) — shared with cruising boaters for feedback.
