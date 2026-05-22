@@ -2,5 +2,8 @@
   "name": "sanjuan-discovery-guide",
   "version": "1.0.0",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "scripts": {
+    "build": "node build/build.mjs"
+  }
 }

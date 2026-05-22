@@ -12,6 +12,18 @@ let activeTrailFilter = 'all';
 const placesCache = {};
 let activePlacesController = null;
 
+// ========== ROUTE METADATA ==========
+const ROUTE_META = {
+  map:            { title: 'San Juan Islands Boating Guide', desc: 'Anchorages, marinas, and local knowledge for cruising the San Juan Islands.' },
+  islands:        { title: 'Islands — San Juan Islands Boating Guide', desc: 'Seven islands spanning walkable harbor towns to wilderness marine parks in the San Juan archipelago.' },
+  dining:         { title: 'Dining — San Juan Islands Boating Guide', desc: 'From dockside fish & chips to James Beard-nominated kitchens across the San Juan Islands.' },
+  trails:         { title: 'Trails & Hiking — San Juan Islands Boating Guide', desc: 'From easy waterfront strolls to 2,400-foot summit climbs across the San Juan Islands.' },
+  'marine-parks': { title: 'Marine Parks — San Juan Islands Boating Guide', desc: 'Boat-access destinations worth planning a trip around in the San Juan Islands.' },
+  farms:          { title: 'Farms & Producers — San Juan Islands Boating Guide', desc: 'Lavender fields, shellfish farms, distilleries, and tasting rooms in the San Juan Islands.' },
+  culture:        { title: 'Galleries & Culture — San Juan Islands Boating Guide', desc: 'Art, books, and creative spaces across the San Juan Islands.' },
+  logistics:      { title: 'Cruising Logistics — San Juan Islands Boating Guide', desc: 'Water taxis, ferries, fuel, customs, and getting around the San Juan Islands.' }
+};
+
 // ========== INITIALIZATION ==========
 document.addEventListener('DOMContentLoaded', () => {
   initTabs();
@@ -26,7 +38,66 @@ document.addEventListener('DOMContentLoaded', () => {
   renderLogistics();
   initModal();
   initWeatherModal();
+  initRouter();
 });
+
+// ========== ROUTING ==========
+function parseRoute(path) {
+  const segments = path.replace(/^\/|\/$/g, '').split('/').filter(Boolean);
+  if (segments.length === 0) return { tab: 'map' };
+  const validTabs = ['islands', 'dining', 'trails', 'marine-parks', 'farms', 'culture', 'logistics'];
+  if (validTabs.includes(segments[0])) {
+    const result = { tab: segments[0] };
+    if (segments[0] === 'islands' && segments[1]) result.islandId = segments[1];
+    return result;
+  }
+  return { tab: 'map' };
+}
+
+function initRouter() {
+  const route = parseRoute(window.location.pathname);
+  if (route.tab !== 'map') {
+    switchTab(route.tab, { pushState: false });
+  }
+  if (route.islandId) {
+    showIslandDetail(route.islandId, { pushState: false });
+  }
+
+  window.addEventListener('popstate', () => {
+    const r = parseRoute(window.location.pathname);
+    switchTab(r.tab || 'map', { pushState: false });
+    if (r.islandId) {
+      showIslandDetail(r.islandId, { pushState: false });
+    } else if (r.tab === 'islands' && activeIsland) {
+      hideIslandDetail({ pushState: false });
+    }
+  });
+}
+
+function updateMeta(tab, islandId) {
+  let meta;
+  if (islandId && typeof ISLANDS !== 'undefined') {
+    const island = ISLANDS.find(i => i.id === islandId);
+    if (island) {
+      meta = { title: island.name + ' — San Juan Islands Boating Guide', desc: island.description.substring(0, 155) };
+    }
+  }
+  if (!meta) meta = ROUTE_META[tab] || ROUTE_META.map;
+
+  document.title = meta.title;
+  const descTag = document.querySelector('meta[name="description"]');
+  if (descTag) descTag.setAttribute('content', meta.desc);
+  const canonTag = document.querySelector('link[rel="canonical"]');
+  if (canonTag) {
+    const path = tab === 'map' ? '/' : islandId ? `/islands/${islandId}` : `/${tab}`;
+    canonTag.setAttribute('href', 'https://sanjuan-guide.vercel.app' + path);
+  }
+  // OG tags
+  const ogTitle = document.querySelector('meta[property="og:title"]');
+  if (ogTitle) ogTitle.setAttribute('content', meta.title);
+  const ogDesc = document.querySelector('meta[property="og:description"]');
+  if (ogDesc) ogDesc.setAttribute('content', meta.desc);
+}
 
 // ========== GOOGLE PLACES ==========
 async function fetchPlaceData(name, area) {
@@ -299,7 +370,8 @@ function initTabs() {
   });
 }
 
-function switchTab(tab) {
+function switchTab(tab, opts) {
+  opts = opts || {};
   activeTab = tab;
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelector(`.tab-btn[data-tab="${tab}"]`).classList.add('active');
@@ -312,7 +384,12 @@ function switchTab(tab) {
   const fbBtn = document.getElementById('mps-fb-btn');
   if (fbBtn) fbBtn.style.setProperty('display', tab === 'map' ? 'none' : 'flex', 'important');
   if (tab === 'islands') {
-    hideIslandDetail();
+    hideIslandDetail({ pushState: false });
+  }
+  if (opts.pushState !== false) {
+    const url = tab === 'map' ? '/' : '/' + tab;
+    history.pushState({ tab: tab }, '', url);
+    updateMeta(tab);
   }
 }
 
@@ -462,13 +539,19 @@ function renderIslands() {
   `).join('');
 }
 
-function showIslandDetail(islandId) {
+function showIslandDetail(islandId, opts) {
+  opts = opts || {};
   const island = ISLANDS.find(i => i.id === islandId);
   if (!island) return;
 
   activeIsland = islandId;
   document.getElementById('islandGrid').style.display = 'none';
   document.querySelector('#panel-islands .section-header').style.display = 'none';
+
+  if (opts.pushState !== false) {
+    history.pushState({ tab: 'islands', islandId: islandId }, '', '/islands/' + islandId);
+    updateMeta('islands', islandId);
+  }
 
   const detail = document.getElementById('islandDetail');
   const islandMarinas = MARINAS.filter(m => m.island === islandId);
@@ -546,12 +629,17 @@ function showIslandDetail(islandId) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function hideIslandDetail() {
+function hideIslandDetail(opts) {
+  opts = opts || {};
   activeIsland = null;
   document.getElementById('islandDetail').classList.remove('active');
   document.getElementById('islandDetail').innerHTML = '';
   document.getElementById('islandGrid').style.display = '';
   document.querySelector('#panel-islands .section-header').style.display = '';
+  if (opts.pushState !== false) {
+    history.pushState({ tab: 'islands' }, '', '/islands');
+    updateMeta('islands');
+  }
 }
 
 // ========== SHARED CARD RENDERERS ==========
