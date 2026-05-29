@@ -28,7 +28,6 @@ const ROUTE_META = {
 document.addEventListener('DOMContentLoaded', () => {
   initTabs();
   initMap();
-  initMapCard();
   renderIslands();
   renderMarineParks();
   renderDining();
@@ -443,7 +442,7 @@ function renderMapMarkers(filter) {
 
     marker.on('click', (e) => {
       e.originalEvent.stopPropagation();
-      showMapCard(marina, cat);
+      openModal(marinaToModalItem(marina));
     });
 
     if (window.innerWidth >= 768) {
@@ -456,68 +455,6 @@ function renderMapMarkers(filter) {
 }
 
 
-let currentMarinaId = null;
-let currentMarinaData = null;
-
-function showMapCard(marina, cat) {
-  const card = document.getElementById('mapCard');
-  const nameEl = document.getElementById('mapCardName');
-  const metaEl = document.getElementById('mapCardMeta');
-  const photoEl = document.getElementById('mapCardPhoto');
-
-  // If same marina tapped while visible, hide
-  if (currentMarinaId === marina.id && card.classList.contains('visible')) {
-    hideMapCard();
-    return;
-  }
-
-  currentMarinaId = marina.id;
-  currentMarinaData = { marina, cat };
-
-  nameEl.textContent = marina.name;
-  metaEl.innerHTML = `
-    <span class="category-badge" style="background:${cat.color}">${cat.label}</span>
-    ${marina.area || ''}
-  `;
-
-  // Placeholder tint until photo loads
-  photoEl.style.backgroundImage = '';
-  photoEl.style.backgroundColor = cat.color + '22';
-
-  card.classList.add('visible');
-
-  // Fetch photo from Places API
-  fetchPlaceData(marina.name, marina.area).then(places => {
-    if (currentMarinaId !== marina.id) return;
-    if (places && places.photos && places.photos.length > 0) {
-      photoEl.style.backgroundImage = `url(${places.photos[0]})`;
-    }
-  }).catch(() => {});
-}
-
-function hideMapCard() {
-  const card = document.getElementById('mapCard');
-  card.classList.remove('visible');
-  currentMarinaId = null;
-  currentMarinaData = null;
-}
-
-function initMapCard() {
-  const card = document.getElementById('mapCard');
-  const closeBtn = document.getElementById('mapCardClose');
-
-  closeBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    hideMapCard();
-  });
-
-  // Tapping card opens full detail modal
-  card.addEventListener('click', () => {
-    if (!currentMarinaData) return;
-    const item = marinaToModalItem(currentMarinaData.marina);
-    openModal(item);
-  });
-}
 
 // ========== ISLANDS ==========
 function renderIslands() {
@@ -1076,9 +1013,3 @@ async function fetchWelcomeWeather() {
   }
 }
 
-// ========== MAP CLICK HANDLER ==========
-document.addEventListener('click', (e) => {
-  if (activeTab === 'map' && !e.target.closest('.map-card') && !e.target.closest('.leaflet-interactive')) {
-    hideMapCard();
-  }
-});
