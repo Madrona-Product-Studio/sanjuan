@@ -554,6 +554,22 @@ const MARINAS = [
   },
   // === MARINE PARK MOORAGE (map markers for existing parks) ===
   {
+    id: "jones-north-cove",
+    name: "Jones Island — North Cove",
+    island: null,
+    area: "Jones Island",
+    lat: 48.6190,
+    lng: -123.0450,
+    category: "state-park",
+    type: "State Marine Park",
+    mooringBuoys: 7,
+    dockLength: 128,
+    fuel: false,
+    details: "7 buoys and 128-ft dock at North Cove. Compact island with tame black-tailed deer, a heritage orchard, and one of the few ADA-accessible trails in the marine park system. 24 primitive campsites plus Adirondack shelters (reservable 9 months ahead). Drinking water May-Sep.",
+    rates: "$23/night buoy, $1/ft dock",
+    caution: "Dock removed Oct through Mar. North Cove rough in northerly winds; South Cove rough in southerlies."
+  },
+  {
     id: "stuart-reid",
     name: "Stuart Island — Reid Harbor",
     island: "stuart",
