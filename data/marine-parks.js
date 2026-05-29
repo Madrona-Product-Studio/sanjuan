@@ -148,5 +148,41 @@ const MARINE_PARKS = [
     description: "581-acre hourglass-shaped island — two forested hills rising 200+ feet connected by a low isthmus with two white sand beaches. West Cove faces Decatur Island and is more protected; East Cove is exposed to Rosario Strait traffic.",
     seasonalNotes: null,
     hazards: "West Cove: strong current at dock, rocky bottom — do not anchor. East Cove: exposed to heavy ferry and commercial vessel wakes."
+  },
+  {
+    id: "matia",
+    name: "Matia Island (State Park & Wildlife Refuge)",
+    area: "Outer Islands",
+    lat: 48.748,
+    lng: -122.843,
+    access: "Boat only",
+    managingAgency: "USFWS / Washington State Parks",
+    moorage: "128-ft dock at Rolfe Cove (128 ft overnight moorage), 45-ft ramp, moorage float. 2 seasonal buoys (May-Oct).",
+    camping: "2 primitive sites at Rolfe Cove",
+    trails: "Short trail from dock to campground only. All other areas closed.",
+    water: "None",
+    garbage: "Pack out",
+    cellular: "Limited",
+    description: "145 acres split between a National Wildlife Refuge and state park at Rolfe Cove. Old-growth forest with 30-foot-circumference western red cedars. Only Rolfe Cove is open to visitors. All other shoreline is closed year-round to protect nesting seabirds, bald eagles, and marine mammals. Pets prohibited.",
+    seasonalNotes: "Buoys available May through October only",
+    hazards: "Do NOT land anywhere except Rolfe Cove dock. Wildlife Refuge violations carry federal penalties. Pets prohibited."
+  },
+  {
+    id: "decatur",
+    name: "Decatur Island Marine State Park",
+    area: "Near Lopez Island",
+    lat: 48.508,
+    lng: -122.810,
+    access: "Boat only — day use",
+    managingAgency: "Washington State Parks",
+    moorage: "4 mooring buoys, no dock",
+    camping: "No camping",
+    trails: "Short beach access trail",
+    water: "None",
+    garbage: "Pack out",
+    cellular: "Good — Lopez/Anacortes towers",
+    description: "Small day-use marine state park on Decatur Island's northwest shore. Four mooring buoys and a pocket beach make it a convenient stop between Lopez Island and Anacortes. The island itself is mostly private residential, so exploration is limited to the park area.",
+    seasonalNotes: "Day use only. No overnight moorage.",
+    hazards: "Respect private property boundaries. Ferry traffic in adjacent lanes."
   }
 ];

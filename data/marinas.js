@@ -347,8 +347,8 @@ const MARINAS = [
   {
     id: "matia-rolfe-cove",
     name: "Matia Island — Rolfe Cove",
-    island: null,
-    area: "Outer Islands",
+    island: "matia",
+    area: "Matia Island",
     lat: 48.7483,
     lng: -122.8431,
     category: "state-park",

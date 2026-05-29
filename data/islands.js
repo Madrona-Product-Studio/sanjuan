@@ -83,5 +83,77 @@ const ISLANDS = [
     boatAccessOnly: true,
     highlights: ["Hourglass-shaped island", "Two white sand beaches", "Bluff-top hiking trails", "Rosario Strait views"],
     imageColor: "#795548"
+  },
+  {
+    id: "stuart",
+    name: "Stuart Island",
+    tagline: "Two harbors and the Turn Point Lighthouse",
+    description: "Stuart Island sits near the Canadian border with two protected harbors connected by a 3.5-mile trail to the 1893 Turn Point Lighthouse. One of the most rewarding destinations in the San Juans for boaters willing to make the crossing.",
+    center: { lat: 48.682, lng: -123.196 },
+    zoom: 13,
+    ferryServed: false,
+    boatAccessOnly: true,
+    highlights: ["Turn Point Lighthouse (1893)", "Reid & Prevost harbors", "20 mooring buoys", "Near Canadian border"],
+    imageColor: "#5D6D7E"
+  },
+  {
+    id: "cypress",
+    name: "Cypress Island",
+    tagline: "Eagle Cliff and the crown jewel of DNR lands",
+    description: "Cypress Island's 1,730 acres of DNR-managed forest and shoreline make it one of the largest undeveloped islands in the San Juans. The Eagle Cliff trail climbs to a 750-foot summit with panoramic views across Rosario Strait.",
+    center: { lat: 48.581, lng: -122.694 },
+    zoom: 13,
+    ferryServed: false,
+    boatAccessOnly: true,
+    highlights: ["Eagle Cliff (750 ft summit)", "Reed Lake wildlife blind", "Free DNR mooring buoys", "WWII-era airfield ruins"],
+    imageColor: "#2E7D32"
+  },
+  {
+    id: "patos",
+    name: "Patos Island",
+    tagline: "The northernmost island and true wilderness solitude",
+    description: "Patos Island's 207 acres of madrone forest sit at the northern edge of the San Juans, closer to Canada than to any ferry terminal. The 1893 lighthouse is tended by volunteer Keepers of the Patos Light.",
+    center: { lat: 48.787, lng: -122.972 },
+    zoom: 14,
+    ferryServed: false,
+    boatAccessOnly: true,
+    highlights: ["Northernmost San Juan island", "1893 lighthouse", "Madrone forest", "True wilderness solitude"],
+    imageColor: "#8D6E63"
+  },
+  {
+    id: "clark",
+    name: "Clark Island",
+    tagline: "Madrone groves and genuine solitude",
+    description: "Clark Island's 55 acres of rocky beaches and old-growth madrone groves see fewer visitors than Sucia or Jones, offering the kind of quiet that defined the San Juans a generation ago. Unusual among outer islands for having usable cellular service.",
+    center: { lat: 48.728, lng: -122.770 },
+    zoom: 14,
+    ferryServed: false,
+    boatAccessOnly: true,
+    highlights: ["9 mooring buoys", "Old-growth madrone", "Genuine solitude", "Cellular service (rare)"],
+    imageColor: "#A1887F"
+  },
+  {
+    id: "decatur",
+    name: "Decatur Island",
+    tagline: "A quiet anchorage between Lopez and the ferry lanes",
+    description: "Decatur Island is mostly private residential land with a small marine state park at James Island's doorstep. The day-use park on the northwest shore offers mooring buoys and a pocket beach, making it a convenient lunch stop between Lopez and Anacortes.",
+    center: { lat: 48.508, lng: -122.810 },
+    zoom: 13,
+    ferryServed: false,
+    boatAccessOnly: true,
+    highlights: ["Day-use marine state park", "Mooring buoys", "Between Lopez & Anacortes", "Quiet anchorage"],
+    imageColor: "#78909C"
+  },
+  {
+    id: "matia",
+    name: "Matia Island",
+    tagline: "A Wildlife Refuge with one permitted landing",
+    description: "Matia Island's 145 acres are split between a National Wildlife Refuge and a state park campground at Rolfe Cove. Only the Rolfe Cove dock and a short trail to the campground are open to visitors. All other shoreline is closed to protect nesting seabirds and marine mammals.",
+    center: { lat: 48.748, lng: -122.843 },
+    zoom: 14,
+    ferryServed: false,
+    boatAccessOnly: true,
+    highlights: ["National Wildlife Refuge", "Rolfe Cove dock access only", "Old-growth forest", "Nesting seabird habitat"],
+    imageColor: "#546E7A"
   }
 ];
