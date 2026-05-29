@@ -47,6 +47,8 @@ export function checkRateLimit(req, res, endpointKey) {
 
 // ─── Origin Checking ────────────────────────────────────────────────────────
 const ALLOWED_ORIGINS = [
+  'https://sjiboating.com',
+  'https://www.sjiboating.com',
   'https://sanjuan.vercel.app',
 ];
 
