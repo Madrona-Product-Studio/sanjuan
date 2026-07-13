@@ -52,8 +52,58 @@ export const ROUTE_META = {
     description: 'Water taxis, ferries, fuel, customs, and getting around the San Juan Islands.',
     priority: 0.7,
     changefreq: 'monthly'
+  },
+  '/about': {
+    title: 'About — San Juan Islands Boating Guide',
+    description: 'A hand-curated boating guide to the San Juan Islands, written from the dock across three summers of cruising.',
+    priority: 0.5,
+    changefreq: 'yearly'
   }
 };
+
+/** Generate listing detail route metadata */
+export function itemMeta(type, item) {
+  const desc = (item.description || item.details || '').substring(0, 155);
+  return {
+    title: `${item.name} — San Juan Islands Boating Guide`,
+    description: desc,
+    priority: 0.6,
+    changefreq: 'monthly'
+  };
+}
+
+const ITEM_SCHEMA_TYPES = {
+  marinas: 'Marina',
+  dining: 'Restaurant',
+  trails: 'Place',
+  'marine-parks': 'Park',
+  farms: 'LocalBusiness',
+  culture: 'LocalBusiness'
+};
+
+/** Generate JSON-LD for a listing detail route */
+export function itemJsonLd(type, item) {
+  const ld = {
+    '@context': 'https://schema.org',
+    '@type': ITEM_SCHEMA_TYPES[type] || 'Place',
+    name: item.name,
+    description: item.description || item.details || '',
+    address: {
+      '@type': 'PostalAddress',
+      addressLocality: item.area || item.name,
+      addressRegion: 'WA',
+      addressCountry: 'US'
+    }
+  };
+  if (item.lat != null && item.lng != null) {
+    ld.geo = { '@type': 'GeoCoordinates', latitude: item.lat, longitude: item.lng };
+  }
+  if (type === 'dining') {
+    if (item.cuisine) ld.servesCuisine = item.cuisine;
+    if (item.price) ld.priceRange = item.price;
+  }
+  return ld;
+}
 
 /** Generate island detail route metadata from data */
 export function islandMeta(island) {

@@ -12,6 +12,22 @@ let activeTrailFilter = 'all';
 const placesCache = {};
 let activePlacesController = null;
 
+// ========== ITEM TYPE REGISTRY ==========
+// Maps URL segment -> collection, modal builder, and the tab the route lives under.
+const ITEM_TYPES = {
+  marinas:        { list: () => MARINAS,      toModal: m => marinaToModalItem(m),      tab: 'map' },
+  dining:         { list: () => DINING,       toModal: d => diningToModalItem(d),      tab: 'dining' },
+  trails:         { list: () => TRAILS,       toModal: t => trailToModalItem(t),       tab: 'trails' },
+  'marine-parks': { list: () => MARINE_PARKS, toModal: p => marineParksToModalItem(p), tab: 'marine-parks' },
+  farms:          { list: () => FARMS,        toModal: f => farmToModalItem(f),        tab: 'farms' },
+  culture:        { list: () => GALLERIES,    toModal: g => galleryToModalItem(g),     tab: 'culture' }
+};
+
+// ========== ANALYTICS ==========
+function track(event, params) {
+  if (typeof gtag === 'function') gtag('event', event, params || {});
+}
+
 // ========== ROUTE METADATA ==========
 const ROUTE_META = {
   map:            { title: 'San Juan Islands Boating Guide', desc: 'Anchorages, marinas, and local knowledge for cruising the San Juan Islands.' },
@@ -21,7 +37,8 @@ const ROUTE_META = {
   'marine-parks': { title: 'Marine Parks — San Juan Islands Boating Guide', desc: 'Boat-access destinations worth planning a trip around in the San Juan Islands.' },
   farms:          { title: 'Farms & Producers — San Juan Islands Boating Guide', desc: 'Lavender fields, shellfish farms, distilleries, and tasting rooms in the San Juan Islands.' },
   culture:        { title: 'Galleries & Culture — San Juan Islands Boating Guide', desc: 'Art, books, and creative spaces across the San Juan Islands.' },
-  logistics:      { title: 'Cruising Logistics — San Juan Islands Boating Guide', desc: 'Water taxis, ferries, fuel, customs, and getting around the San Juan Islands.' }
+  logistics:      { title: 'Cruising Logistics — San Juan Islands Boating Guide', desc: 'Water taxis, ferries, fuel, customs, and getting around the San Juan Islands.' },
+  about:          { title: 'About — San Juan Islands Boating Guide', desc: 'A hand-curated boating guide to the San Juan Islands, written from the dock across three summers of cruising.' }
 };
 
 // ========== INITIALIZATION ==========
@@ -45,7 +62,10 @@ document.addEventListener('DOMContentLoaded', () => {
 function parseRoute(path) {
   const segments = path.replace(/^\/|\/$/g, '').split('/').filter(Boolean);
   if (segments.length === 0) return { tab: 'map' };
-  const validTabs = ['islands', 'dining', 'trails', 'marine-parks', 'farms', 'culture', 'logistics'];
+  if (ITEM_TYPES[segments[0]] && segments[1]) {
+    return { tab: ITEM_TYPES[segments[0]].tab, itemType: segments[0], itemId: segments[1] };
+  }
+  const validTabs = ['islands', 'dining', 'trails', 'marine-parks', 'farms', 'culture', 'logistics', 'about'];
   if (validTabs.includes(segments[0])) {
     const result = { tab: segments[0] };
     if (segments[0] === 'islands' && segments[1]) result.islandId = segments[1];
@@ -62,11 +82,17 @@ function initRouter() {
   if (route.islandId) {
     showIslandDetail(route.islandId, { pushState: false });
   }
+  if (route.itemType) {
+    openModalFor(route.itemType, route.itemId, { pushState: false });
+  }
 
   window.addEventListener('popstate', () => {
     const r = parseRoute(window.location.pathname);
+    if (isModalOpen()) closeModal({ pushState: false });
     switchTab(r.tab || 'map', { pushState: false });
-    if (r.islandId) {
+    if (r.itemType) {
+      openModalFor(r.itemType, r.itemId, { pushState: false });
+    } else if (r.islandId) {
       showIslandDetail(r.islandId, { pushState: false });
     } else if (r.tab === 'islands' && activeIsland) {
       hideIslandDetail({ pushState: false });
@@ -74,22 +100,25 @@ function initRouter() {
   });
 }
 
-function updateMeta(tab, islandId) {
-  let meta;
-  if (islandId && typeof ISLANDS !== 'undefined') {
+function updateMeta(tab, islandId, item) {
+  let meta, path;
+  if (item) {
+    meta = { title: item.title, desc: item.desc };
+    path = item.path;
+  } else if (islandId && typeof ISLANDS !== 'undefined') {
     const island = ISLANDS.find(i => i.id === islandId);
     if (island) {
       meta = { title: island.name + ' — San Juan Islands Boating Guide', desc: island.description.substring(0, 155) };
     }
   }
   if (!meta) meta = ROUTE_META[tab] || ROUTE_META.map;
+  if (!path) path = tab === 'map' ? '/' : islandId ? `/islands/${islandId}` : `/${tab}`;
 
   document.title = meta.title;
   const descTag = document.querySelector('meta[name="description"]');
   if (descTag) descTag.setAttribute('content', meta.desc);
   const canonTag = document.querySelector('link[rel="canonical"]');
   if (canonTag) {
-    const path = tab === 'map' ? '/' : islandId ? `/islands/${islandId}` : `/${tab}`;
     canonTag.setAttribute('href', 'https://sjiboating.com' + path);
   }
   // OG tags
@@ -144,6 +173,38 @@ function renderStars(rating) {
 }
 
 // ========== DETAIL MODAL ==========
+let currentItemRoute = null;
+
+function isModalOpen() {
+  const overlay = document.getElementById('detailModalOverlay');
+  return overlay && overlay.classList.contains('active');
+}
+
+// Open a listing by type + id (the deep-linkable path). Used by cards, map markers, and the router.
+function openModalFor(type, id, opts) {
+  opts = opts || {};
+  const reg = ITEM_TYPES[type];
+  if (!reg) return;
+  const item = reg.list().find(x => x.id === id);
+  if (!item) return;
+  openModal(reg.toModal(item), { path: `/${type}/${id}`, type: type, pushState: opts.pushState });
+}
+
+// Anchor click handler: allow cmd/ctrl-click to open in a new tab, otherwise open the modal.
+function openItem(e, type, id) {
+  if (e && (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1)) return true;
+  if (e) e.preventDefault();
+  openModalFor(type, id);
+  return false;
+}
+
+function navTab(e, tab) {
+  if (e && (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1)) return true;
+  if (e) e.preventDefault();
+  switchTab(tab);
+  return false;
+}
+
 function initModal() {
   const overlay = document.getElementById('detailModalOverlay');
   const closeBtn = document.getElementById('modalClose');
@@ -157,7 +218,8 @@ function initModal() {
   });
 }
 
-function openModal(item) {
+function openModal(item, opts) {
+  opts = opts || {};
   const overlay = document.getElementById('detailModalOverlay');
   const photosEl = document.getElementById('modalPhotos');
   const bodyEl = document.getElementById('modalBody');
@@ -189,6 +251,34 @@ function openModal(item) {
 
   photosEl.innerHTML = '<div class="modal-photos-placeholder"></div>';
   bodyEl.innerHTML = bodyHtml;
+
+  // "Suggest an update" — keeps listings fresh and starts conversations with businesses
+  const suggestWrap = document.createElement('div');
+  suggestWrap.className = 'modal-suggest';
+  const suggestBtn = document.createElement('button');
+  suggestBtn.type = 'button';
+  suggestBtn.className = 'modal-suggest-link';
+  suggestBtn.textContent = 'See something out of date? Suggest an update';
+  suggestBtn.addEventListener('click', () => {
+    track('suggest_update', { listing_name: item.name });
+    if (window.MPSFeedback) window.MPSFeedback.open('Update for: ' + item.name);
+  });
+  suggestWrap.appendChild(suggestBtn);
+  bodyEl.appendChild(suggestWrap);
+
+  // Deep-link URL + meta for shareable listings
+  currentItemRoute = opts.path || null;
+  if (opts.path) {
+    if (opts.pushState !== false) {
+      history.pushState({ modal: opts.path }, '', opts.path);
+    }
+    updateMeta(activeTab, activeIsland, {
+      title: item.name + ' — San Juan Islands Boating Guide',
+      desc: (item.description || '').substring(0, 155),
+      path: opts.path
+    });
+  }
+  track('listing_view', { listing_name: item.name, listing_type: opts.type || 'other' });
 
   // Lock scroll first so mobile browser chrome settles before animating
   document.body.style.overflow = 'hidden';
@@ -267,6 +357,14 @@ function openModal(item) {
 
       if (contentEl) {
         contentEl.innerHTML = placesHtml;
+        // Outbound referral tracking — the core sponsorship metric
+        contentEl.querySelectorAll('.action-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const outType = btn.classList.contains('action-directions') ? 'directions'
+              : btn.classList.contains('action-phone') ? 'phone' : 'website';
+            track('outbound_click', { listing_name: item.name, outbound_type: outType });
+          });
+        });
         requestAnimationFrame(() => contentEl.classList.add('loaded'));
       }
     }).catch(() => {
@@ -278,13 +376,23 @@ function openModal(item) {
   }
 }
 
-function closeModal() {
+function closeModal(opts) {
+  opts = opts || {};
   const overlay = document.getElementById('detailModalOverlay');
   overlay.classList.remove('active');
   document.body.style.overflow = '';
   // Reset photo state for next open
   const photosEl = document.getElementById('modalPhotos');
   if (photosEl) photosEl.classList.remove('loaded');
+  // Restore the parent route if this modal owned a deep link
+  if (currentItemRoute) {
+    currentItemRoute = null;
+    if (opts.pushState !== false) {
+      const path = activeIsland ? '/islands/' + activeIsland : activeTab === 'map' ? '/' : '/' + activeTab;
+      history.pushState({ tab: activeTab }, '', path);
+      updateMeta(activeTab, activeIsland);
+    }
+  }
 }
 
 function initCarousel() {
@@ -372,11 +480,15 @@ function initTabs() {
 
 function switchTab(tab, opts) {
   opts = opts || {};
+  const panel = document.getElementById(`panel-${tab}`);
+  if (!panel) return;
   activeTab = tab;
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.querySelector(`.tab-btn[data-tab="${tab}"]`).classList.add('active');
+  const tabBtn = document.querySelector(`.tab-btn[data-tab="${tab}"]`);
+  if (tabBtn) tabBtn.classList.add('active');
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.getElementById(`panel-${tab}`).classList.add('active');
+  panel.classList.add('active');
+  track('tab_view', { tab: tab });
   if (tab === 'map' && map) {
     setTimeout(() => map.invalidateSize(), 100);
   }
@@ -417,9 +529,56 @@ function initMap() {
   }).addTo(map);
 
   renderMapMarkers('all');
+  initMapOverlays();
+
+  // Start with the legend collapsed on small screens so it doesn't cover the map
+  const legend = document.getElementById('mapLegend');
+  if (legend && window.innerWidth < 768) legend.classList.add('collapsed');
 
   // Fit map to show all markers with padding
   map.fitBounds(markerBounds, { padding: [30, 30] });
+}
+
+// ========== MAP OVERLAY LAYERS ==========
+// Marine parks already appear via the State Parks marina markers, so overlays
+// cover the categories that add new map information.
+const MAP_OVERLAYS = {
+  dining: { label: 'Dining', color: '#e8890c', type: 'dining', data: () => DINING },
+  trails: { label: 'Trails', color: '#2f9e44', type: 'trails', data: () => TRAILS },
+  farms:  { label: 'Farms',  color: '#b0578d', type: 'farms',  data: () => FARMS }
+};
+const overlayGroups = {};
+
+function initMapOverlays() {
+  Object.entries(MAP_OVERLAYS).forEach(([key, cfg]) => {
+    const group = L.layerGroup();
+    cfg.data().forEach(item => {
+      if (item.lat == null || item.lng == null) return;
+      const mk = L.circleMarker([item.lat, item.lng], {
+        radius: 5.5,
+        fillColor: cfg.color,
+        color: 'rgba(255,255,255,0.9)',
+        weight: 1.5,
+        opacity: 1,
+        fillOpacity: 0.8
+      });
+      mk.bindTooltip(item.name, { direction: 'top', offset: [0, -6] });
+      mk.on('click', (e) => {
+        e.originalEvent.stopPropagation();
+        openModalFor(cfg.type, item.id);
+      });
+      group.addLayer(mk);
+    });
+    overlayGroups[key] = group;
+  });
+}
+
+function toggleMapLayer(key, on) {
+  const group = overlayGroups[key];
+  if (!group || !map) return;
+  if (on) map.addLayer(group);
+  else map.removeLayer(group);
+  track('map_layer_toggle', { layer: key, enabled: !!on });
 }
 
 function renderMapMarkers(filter) {
@@ -442,7 +601,7 @@ function renderMapMarkers(filter) {
 
     marker.on('click', (e) => {
       e.originalEvent.stopPropagation();
-      openModal(marinaToModalItem(marina));
+      openModalFor('marinas', marina.id);
     });
 
     if (window.innerWidth >= 768) {
@@ -460,7 +619,7 @@ function renderMapMarkers(filter) {
 function renderIslands() {
   const grid = document.getElementById('islandGrid');
   grid.innerHTML = ISLANDS.map(island => `
-    <div class="island-card" onclick="showIslandDetail('${island.id}')">
+    <a class="island-card" href="/islands/${island.id}" onclick="return islandNav(event, '${island.id}')">
       <div class="island-card-banner" style="background:${island.imageColor}"></div>
       <div class="island-card-body">
         <span class="badge ${island.ferryServed ? 'badge-ferry' : 'badge-boat'}">
@@ -473,8 +632,15 @@ function renderIslands() {
           ${island.highlights.map(h => `<span class="highlight-tag">${h}</span>`).join('')}
         </div>
       </div>
-    </div>
+    </a>
   `).join('');
+}
+
+function islandNav(e, id) {
+  if (e && (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1)) return true;
+  if (e) e.preventDefault();
+  showIslandDetail(id);
+  return false;
 }
 
 function showIslandDetail(islandId, opts) {
@@ -512,7 +678,7 @@ function showIslandDetail(islandId, opts) {
     html += islandMarinas.map(m => {
       const cat = MARINA_CATEGORIES[m.category] || { color: '#999', label: m.type };
       return `
-        <div class="activity-card modal-trigger" onclick="openModal(marinaToModalItem(MARINAS.find(x => x.id === '${m.id}')))">
+        <a class="activity-card modal-trigger" href="/marinas/${m.id}" onclick="return openItem(event, 'marinas', '${m.id}')">
           <h4>${m.name}</h4>
           <div class="meta">
             <span style="color:${cat.color};font-weight:600">${cat.label}</span>
@@ -520,7 +686,7 @@ function showIslandDetail(islandId, opts) {
             ${m.fuel ? '<span>Fuel</span>' : ''}
           </div>
           <p>${m.details.substring(0, 100)}${m.details.length > 100 ? '...' : ''}</p>
-        </div>
+        </a>
       `;
     }).join('');
     html += `</div></div>`;
@@ -541,11 +707,11 @@ function showIslandDetail(islandId, opts) {
   if (islandGalleries.length) {
     html += `<div class="detail-section"><h3>Art & Galleries</h3><div class="activity-list">`;
     html += islandGalleries.map(g => `
-      <div class="activity-card gallery-card" onclick="openModal(galleryToModalItem(GALLERIES.find(x => x.id === '${g.id}')))">
+      <a class="activity-card gallery-card" href="/culture/${g.id}" onclick="return openItem(event, 'culture', '${g.id}')">
         <h4>${g.name}</h4>
         <div class="meta"><span>${g.area}</span>${g.walkFromDock ? '<span>' + g.walkFromDock + ' from dock</span>' : ''}</div>
         <p>${g.description}</p>
-      </div>
+      </a>
     `).join('');
     html += `</div></div>`;
   }
@@ -583,7 +749,7 @@ function hideIslandDetail(opts) {
 // ========== SHARED CARD RENDERERS ==========
 function renderDiningCard(d) {
   return `
-    <div class="activity-card modal-trigger" onclick="openModal(diningToModalItem(DINING.find(x => x.id === '${d.id}')))">
+    <a class="activity-card modal-trigger" href="/dining/${d.id}" onclick="return openItem(event, 'dining', '${d.id}')">
       <div class="card-top-row">
         <h4>${d.name}</h4>
         <span class="price-badge price-${d.price.length}">${d.price}</span>
@@ -595,13 +761,13 @@ function renderDiningCard(d) {
       </div>
       <p>${d.description}</p>
       ${d.hours ? '<div class="card-hours">' + d.hours + '</div>' : ''}
-    </div>
+    </a>
   `;
 }
 
 function renderTrailCard(t) {
   return `
-    <div class="activity-card modal-trigger" onclick="openModal(trailToModalItem(TRAILS.find(x => x.id === '${t.id}')))">
+    <a class="activity-card modal-trigger" href="/trails/${t.id}" onclick="return openItem(event, 'trails', '${t.id}')">
       <div class="card-top-row">
         <h4>${t.name}</h4>
         <span class="difficulty-pill" style="background:${difficultyColor(t.difficulty)}20;color:${difficultyColor(t.difficulty)}">${t.difficulty}</span>
@@ -613,7 +779,7 @@ function renderTrailCard(t) {
         ${t.discoverPass ? '<span class="discover-pass-badge">Discover Pass</span>' : ''}
       </div>
       <p>${t.description}</p>
-    </div>
+    </a>
   `;
 }
 
@@ -680,7 +846,7 @@ function marineParksToModalItem(p) {
 function renderMarineParks() {
   const grid = document.getElementById('marineParksGrid');
   grid.innerHTML = MARINE_PARKS.map(p => `
-    <div class="activity-card modal-trigger" onclick="openModal(marineParksToModalItem(MARINE_PARKS.find(x => x.id === '${p.id}')))">
+    <a class="activity-card modal-trigger" href="/marine-parks/${p.id}" onclick="return openItem(event, 'marine-parks', '${p.id}')">
       <div class="card-top-row">
         <h4>${p.name}</h4>
         <span class="difficulty-pill" style="background:var(--color-surface-cool);color:var(--color-text-mid)">${p.access}</span>
@@ -691,7 +857,7 @@ function renderMarineParks() {
       </div>
       <p>${p.description.substring(0, 120)}${p.description.length > 120 ? '...' : ''}</p>
       ${p.seasonalNotes ? '<div class="card-hours">' + p.seasonalNotes + '</div>' : ''}
-    </div>
+    </a>
   `).join('');
 }
 
@@ -710,7 +876,7 @@ function renderFarms() {
 
   // Dedicated farm entries
   let items = FARMS.map(f => `
-    <div class="activity-card modal-trigger" onclick="openModal(farmToModalItem(FARMS.find(x => x.id === '${f.id}')))">
+    <a class="activity-card modal-trigger" href="/farms/${f.id}" onclick="return openItem(event, 'farms', '${f.id}')">
       <div class="card-top-row">
         <h4>${f.name}</h4>
         <span class="difficulty-pill" style="background:var(--color-surface-cool);color:var(--color-text-mid)">${f.type}</span>
@@ -720,13 +886,13 @@ function renderFarms() {
         ${f.hours ? '<span>' + f.hours + '</span>' : ''}
       </div>
       <p>${f.description}</p>
-    </div>
+    </a>
   `);
 
   // Cross-listed dining entries with producer: true
   const producers = DINING.filter(d => d.producer);
   items = items.concat(producers.map(d => `
-    <div class="activity-card modal-trigger" onclick="openModal(diningToModalItem(DINING.find(x => x.id === '${d.id}')))">
+    <a class="activity-card modal-trigger" href="/dining/${d.id}" onclick="return openItem(event, 'dining', '${d.id}')">
       <div class="card-top-row">
         <h4>${d.name}</h4>
         <span class="price-badge price-${d.price.length}">${d.price}</span>
@@ -737,7 +903,7 @@ function renderFarms() {
         ${d.walkFromDock ? '<span>' + d.walkFromDock + ' from dock</span>' : ''}
       </div>
       <p>${d.description}</p>
-    </div>
+    </a>
   `));
 
   grid.innerHTML = items.join('');
@@ -763,7 +929,7 @@ function renderCulture() {
 function renderCultureCards(container, filter) {
   const items = filter === 'all' ? GALLERIES : GALLERIES.filter(g => g.island === filter);
   container.innerHTML = items.map(g => `
-    <div class="activity-card modal-trigger" onclick="openModal(galleryToModalItem(GALLERIES.find(x => x.id === '${g.id}')))">
+    <a class="activity-card modal-trigger" href="/culture/${g.id}" onclick="return openItem(event, 'culture', '${g.id}')">
       <h4>${g.name}</h4>
       <div class="meta">
         <span>${g.type ? g.type.replace('_', ' ') : 'gallery'}</span>
@@ -771,7 +937,7 @@ function renderCultureCards(container, filter) {
         ${g.walkFromDock ? '<span>' + g.walkFromDock + ' from dock</span>' : ''}
       </div>
       <p>${g.description}</p>
-    </div>
+    </a>
   `).join('');
 }
 
@@ -798,6 +964,7 @@ function initWeatherModal() {
 }
 
 function openWeatherModal() {
+  track('weather_open');
   const overlay = document.getElementById('weatherModalOverlay');
   document.body.style.overflow = 'hidden';
   void overlay.offsetHeight;
@@ -954,9 +1121,18 @@ function esc(str) {
   return el.innerHTML;
 }
 
+// ========== SERVICE WORKER ==========
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
+
 // ========== WELCOME MODAL ==========
 function initWelcomeModal() {
   if (localStorage.getItem('sji-welcomed')) return;
+  // Deep-link landings go straight to the listing they came for
+  if (isModalOpen()) return;
   const overlay = document.getElementById('welcomeOverlay');
   if (!overlay) return;
 

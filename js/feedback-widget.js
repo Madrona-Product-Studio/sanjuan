@@ -99,8 +99,17 @@
 
   let selectedSentiment = null;
   let selectedTag = null;
+  let prefillContext = null;
 
   btn.addEventListener('click', openModal);
+
+  // Programmatic access for "Suggest an update" links in listing modals
+  window.MPSFeedback = {
+    open: function (context) {
+      prefillContext = context || null;
+      openModal();
+    }
+  };
 
   function faceIcon(type) {
     return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="9" cy="10" r="0.75" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="0.75" fill="currentColor" stroke="none"/>${FACES[type]}</svg>`;
@@ -176,6 +185,11 @@
     `;
     fu.style.maxHeight = '500px'; fu.style.opacity = '1'; fu.style.marginTop = '16px';
 
+    if (prefillContext) {
+      const ta = document.getElementById('mps-fb-text');
+      if (ta && !ta.value) ta.value = prefillContext + ' — ';
+    }
+
     fu.querySelectorAll('.mps-fb-tag').forEach(t => {
       t.addEventListener('click', () => {
         const wasSelected = t.classList.contains('sel');
@@ -234,5 +248,6 @@
   function closeModal(overlay) {
     if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
     btn.style.opacity = '1'; btn.style.pointerEvents = 'auto';
+    prefillContext = null;
   }
 })();

@@ -8,7 +8,7 @@ import { readFileSync, writeFileSync, mkdirSync, cpSync, existsSync, rmSync } fr
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import vm from 'vm';
-import { ROUTE_META, islandMeta, generateJsonLd, BASE_URL } from './seo.mjs';
+import { ROUTE_META, islandMeta, itemMeta, itemJsonLd, generateJsonLd, BASE_URL } from './seo.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -42,7 +42,7 @@ function difficultyColor(d) {
 
 function renderIslandCard(island) {
   return `
-    <div class="island-card" onclick="showIslandDetail('${island.id}')">
+    <a class="island-card" href="/islands/${island.id}" onclick="return islandNav(event, '${island.id}')">
       <div class="island-card-banner" style="background:${island.imageColor}"></div>
       <div class="island-card-body">
         <span class="badge ${island.ferryServed ? 'badge-ferry' : 'badge-boat'}">
@@ -55,12 +55,12 @@ function renderIslandCard(island) {
           ${island.highlights.map(h => `<span class="highlight-tag">${h}</span>`).join('')}
         </div>
       </div>
-    </div>`;
+    </a>`;
 }
 
 function renderDiningCard(d) {
   return `
-    <div class="activity-card modal-trigger" onclick="openModal(diningToModalItem(DINING.find(x => x.id === '${d.id}')))">
+    <a class="activity-card modal-trigger" href="/dining/${d.id}" onclick="return openItem(event, 'dining', '${d.id}')">
       <div class="card-top-row">
         <h4>${d.name}</h4>
         <span class="price-badge price-${d.price.length}">${d.price}</span>
@@ -72,12 +72,12 @@ function renderDiningCard(d) {
       </div>
       <p>${d.description}</p>
       ${d.hours ? '<div class="card-hours">' + d.hours + '</div>' : ''}
-    </div>`;
+    </a>`;
 }
 
 function renderTrailCard(t) {
   return `
-    <div class="activity-card modal-trigger" onclick="openModal(trailToModalItem(TRAILS.find(x => x.id === '${t.id}')))">
+    <a class="activity-card modal-trigger" href="/trails/${t.id}" onclick="return openItem(event, 'trails', '${t.id}')">
       <div class="card-top-row">
         <h4>${t.name}</h4>
         <span class="difficulty-pill" style="background:${difficultyColor(t.difficulty)}20;color:${difficultyColor(t.difficulty)}">${t.difficulty}</span>
@@ -89,12 +89,12 @@ function renderTrailCard(t) {
         ${t.discoverPass ? '<span class="discover-pass-badge">Discover Pass</span>' : ''}
       </div>
       <p>${t.description}</p>
-    </div>`;
+    </a>`;
 }
 
 function renderMarineParkCard(p) {
   return `
-    <div class="activity-card modal-trigger" onclick="openModal(marineParksToModalItem(MARINE_PARKS.find(x => x.id === '${p.id}')))">
+    <a class="activity-card modal-trigger" href="/marine-parks/${p.id}" onclick="return openItem(event, 'marine-parks', '${p.id}')">
       <div class="card-top-row">
         <h4>${p.name}</h4>
         <span class="difficulty-pill" style="background:var(--color-surface-cool);color:var(--color-text-mid)">${p.access}</span>
@@ -105,12 +105,12 @@ function renderMarineParkCard(p) {
       </div>
       <p>${p.description.substring(0, 120)}${p.description.length > 120 ? '...' : ''}</p>
       ${p.seasonalNotes ? '<div class="card-hours">' + p.seasonalNotes + '</div>' : ''}
-    </div>`;
+    </a>`;
 }
 
 function renderFarmCard(f) {
   return `
-    <div class="activity-card modal-trigger" onclick="openModal(farmToModalItem(FARMS.find(x => x.id === '${f.id}')))">
+    <a class="activity-card modal-trigger" href="/farms/${f.id}" onclick="return openItem(event, 'farms', '${f.id}')">
       <div class="card-top-row">
         <h4>${f.name}</h4>
         <span class="difficulty-pill" style="background:var(--color-surface-cool);color:var(--color-text-mid)">${f.type}</span>
@@ -120,12 +120,12 @@ function renderFarmCard(f) {
         ${f.hours ? '<span>' + f.hours + '</span>' : ''}
       </div>
       <p>${f.description}</p>
-    </div>`;
+    </a>`;
 }
 
 function renderProducerDiningCard(d) {
   return `
-    <div class="activity-card modal-trigger" onclick="openModal(diningToModalItem(DINING.find(x => x.id === '${d.id}')))">
+    <a class="activity-card modal-trigger" href="/dining/${d.id}" onclick="return openItem(event, 'dining', '${d.id}')">
       <div class="card-top-row">
         <h4>${d.name}</h4>
         <span class="price-badge price-${d.price.length}">${d.price}</span>
@@ -136,12 +136,12 @@ function renderProducerDiningCard(d) {
         ${d.walkFromDock ? '<span>' + d.walkFromDock + ' from dock</span>' : ''}
       </div>
       <p>${d.description}</p>
-    </div>`;
+    </a>`;
 }
 
 function renderCultureCard(g) {
   return `
-    <div class="activity-card modal-trigger" onclick="openModal(galleryToModalItem(GALLERIES.find(x => x.id === '${g.id}')))">
+    <a class="activity-card modal-trigger" href="/culture/${g.id}" onclick="return openItem(event, 'culture', '${g.id}')">
       <h4>${g.name}</h4>
       <div class="meta">
         <span>${g.type ? g.type.replace('_', ' ') : 'gallery'}</span>
@@ -149,7 +149,7 @@ function renderCultureCard(g) {
         ${g.walkFromDock ? '<span>' + g.walkFromDock + ' from dock</span>' : ''}
       </div>
       <p>${g.description}</p>
-    </div>`;
+    </a>`;
 }
 
 function renderIslandDetail(island) {
@@ -172,7 +172,7 @@ function renderIslandDetail(island) {
     html += islandMarinas.map(m => {
       const cat = MARINA_CATEGORIES[m.category] || { color: '#999', label: m.type };
       return `
-        <div class="activity-card modal-trigger" onclick="openModal(marinaToModalItem(MARINAS.find(x => x.id === '${m.id}')))">
+        <a class="activity-card modal-trigger" href="/marinas/${m.id}" onclick="return openItem(event, 'marinas', '${m.id}')">
           <h4>${m.name}</h4>
           <div class="meta">
             <span style="color:${cat.color};font-weight:600">${cat.label}</span>
@@ -180,7 +180,7 @@ function renderIslandDetail(island) {
             ${m.fuel ? '<span>Fuel</span>' : ''}
           </div>
           <p>${m.details.substring(0, 100)}${m.details.length > 100 ? '...' : ''}</p>
-        </div>`;
+        </a>`;
     }).join('');
     html += `</div></div>`;
   }
@@ -200,11 +200,11 @@ function renderIslandDetail(island) {
   if (islandGalleries.length) {
     html += `<div class="detail-section"><h3>Art & Galleries</h3><div class="activity-list">`;
     html += islandGalleries.map(g => `
-      <div class="activity-card gallery-card" onclick="openModal(galleryToModalItem(GALLERIES.find(x => x.id === '${g.id}')))">
+      <a class="activity-card gallery-card" href="/culture/${g.id}" onclick="return openItem(event, 'culture', '${g.id}')">
         <h4>${g.name}</h4>
         <div class="meta"><span>${g.area}</span>${g.walkFromDock ? '<span>' + g.walkFromDock + ' from dock</span>' : ''}</div>
         <p>${g.description}</p>
-      </div>`).join('');
+      </a>`).join('');
     html += `</div></div>`;
   }
 
@@ -396,6 +396,33 @@ function build() {
     routes.push({ path: route, ...meta });
   }
 
+  // --- Listing detail pages (deep-linkable modals) ---
+  const ITEM_ROUTES = {
+    marinas:        { list: MARINAS,      tab: 'map' },
+    dining:         { list: DINING,       tab: 'dining' },
+    trails:         { list: TRAILS,       tab: 'trails' },
+    'marine-parks': { list: MARINE_PARKS, tab: 'marine-parks' },
+    farms:          { list: FARMS,        tab: 'farms' },
+    culture:        { list: GALLERIES,    tab: 'culture' }
+  };
+  for (const [type, cfg] of Object.entries(ITEM_ROUTES)) {
+    for (const item of cfg.list) {
+      const route = `/${type}/${item.id}`;
+      const meta = itemMeta(type, item);
+      const jsonLd = itemJsonLd(type, item);
+      let page = transformPage(template, route, meta, jsonLd);
+      if (cfg.tab !== 'map') page = setActiveTab(page, cfg.tab);
+      for (const [t, gen] of Object.entries(TAB_CONTENT)) {
+        const { gridId, html: gridHtml } = gen();
+        page = injectGridContent(page, gridId, gridHtml);
+      }
+      const dir = join(DIST, type, item.id);
+      mkdirSync(dir, { recursive: true });
+      writeFile(join(dir, 'index.html'), page);
+      routes.push({ path: route, ...meta });
+    }
+  }
+
   // --- Copy static assets ---
   const assetDirs = ['css', 'js', 'data', 'images'];
   for (const dir of assetDirs) {
@@ -405,7 +432,7 @@ function build() {
     }
   }
   // Copy root files
-  for (const file of ['favicon.svg', 'og-image.png', 'og-image.svg', 'robots.txt']) {
+  for (const file of ['favicon.svg', 'og-image.png', 'og-image.svg', 'robots.txt', 'sw.js', 'manifest.webmanifest']) {
     const src = join(ROOT, file);
     if (existsSync(src)) {
       cpSync(src, join(DIST, file));
