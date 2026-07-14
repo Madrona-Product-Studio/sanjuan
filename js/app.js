@@ -56,6 +56,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initWeatherModal();
   initRouter();
   initWelcomeModal();
+  initSearch();
+  initWindChip();
 });
 
 // ========== ROUTING ==========
@@ -175,6 +177,18 @@ function renderStars(rating) {
 // ========== DETAIL MODAL ==========
 let currentItemRoute = null;
 
+// Site-wide content review date; individual entries can override with
+// verified: "YYYY-MM" as they get re-checked.
+const CONTENT_REVIEWED = 'July 2026';
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+function formatVerified(v) {
+  if (!v) return CONTENT_REVIEWED;
+  const m = /^(\d{4})-(\d{2})$/.exec(v);
+  if (m) return MONTH_NAMES[parseInt(m[2], 10) - 1] + ' ' + m[1];
+  return v;
+}
+
 function isModalOpen() {
   const overlay = document.getElementById('detailModalOverlay');
   return overlay && overlay.classList.contains('active');
@@ -187,7 +201,9 @@ function openModalFor(type, id, opts) {
   if (!reg) return;
   const item = reg.list().find(x => x.id === id);
   if (!item) return;
-  openModal(reg.toModal(item), { path: `/${type}/${id}`, type: type, pushState: opts.pushState });
+  const modalItem = reg.toModal(item);
+  modalItem.verified = item.verified;
+  openModal(modalItem, { path: `/${type}/${id}`, type: type, pushState: opts.pushState });
 }
 
 // Anchor click handler: allow cmd/ctrl-click to open in a new tab, otherwise open the modal.
@@ -255,6 +271,10 @@ function openModal(item, opts) {
   // "Suggest an update" — keeps listings fresh and starts conversations with businesses
   const suggestWrap = document.createElement('div');
   suggestWrap.className = 'modal-suggest';
+  const verifiedEl = document.createElement('span');
+  verifiedEl.className = 'modal-verified';
+  verifiedEl.textContent = 'Last verified ' + formatVerified(item.verified);
+  suggestWrap.appendChild(verifiedEl);
   const suggestBtn = document.createElement('button');
   suggestBtn.type = 'button';
   suggestBtn.className = 'modal-suggest-link';
@@ -535,21 +555,35 @@ function initMap() {
   const legend = document.getElementById('mapLegend');
   if (legend && window.innerWidth < 768) legend.classList.add('collapsed');
 
-  // Fit map to show all markers with padding
-  map.fitBounds(markerBounds, { padding: [30, 30] });
+  // Fit map to show all markers with padding; on phones frame the core
+  // archipelago instead so the islands fill the screen
+  if (window.innerWidth < 768) {
+    map.fitBounds(L.latLngBounds([[48.40, -123.18], [48.78, -122.80]]), { padding: [10, 10] });
+  } else {
+    map.fitBounds(markerBounds, { padding: [30, 30] });
+  }
 }
 
 // ========== MAP OVERLAY LAYERS ==========
 // Marine parks already appear via the State Parks marina markers, so overlays
 // cover the categories that add new map information.
 const MAP_OVERLAYS = {
-  dining: { label: 'Dining', color: '#e8890c', type: 'dining', data: () => DINING },
-  trails: { label: 'Trails', color: '#2f9e44', type: 'trails', data: () => TRAILS },
-  farms:  { label: 'Farms',  color: '#b0578d', type: 'farms',  data: () => FARMS }
+  dining:  { label: 'Dining',  color: '#e8890c', type: 'dining',  data: () => DINING },
+  trails:  { label: 'Trails',  color: '#2f9e44', type: 'trails',  data: () => TRAILS },
+  farms:   { label: 'Farms',   color: '#b0578d', type: 'farms',   data: () => FARMS },
+  culture: { label: 'Culture', color: '#0e7f8c', type: 'culture', data: () => GALLERIES }
 };
+const MAP_LAYER_DEFAULTS = { dining: true, trails: true, farms: false, culture: false };
 const overlayGroups = {};
 
+function mapLayerPrefs() {
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem('sji-map-layers') || '{}'); } catch (e) { /* corrupted prefs */ }
+  return Object.assign({}, MAP_LAYER_DEFAULTS, saved);
+}
+
 function initMapOverlays() {
+  const prefs = mapLayerPrefs();
   Object.entries(MAP_OVERLAYS).forEach(([key, cfg]) => {
     const group = L.layerGroup();
     cfg.data().forEach(item => {
@@ -570,6 +604,9 @@ function initMapOverlays() {
       group.addLayer(mk);
     });
     overlayGroups[key] = group;
+    if (prefs[key]) map.addLayer(group);
+    const box = document.querySelector(`.legend-toggle input[data-layer="${key}"]`);
+    if (box) box.checked = !!prefs[key];
   });
 }
 
@@ -578,6 +615,9 @@ function toggleMapLayer(key, on) {
   if (!group || !map) return;
   if (on) map.addLayer(group);
   else map.removeLayer(group);
+  const prefs = mapLayerPrefs();
+  prefs[key] = !!on;
+  try { localStorage.setItem('sji-map-layers', JSON.stringify(prefs)); } catch (e) { /* storage full/blocked */ }
   track('map_layer_toggle', { layer: key, enabled: !!on });
 }
 
@@ -970,9 +1010,29 @@ function openWeatherModal() {
   void overlay.offsetHeight;
   overlay.classList.add('active');
 
-  if (!weatherData && !weatherFetching) {
+  if (weatherData) {
+    renderWeatherModal(weatherData);
+  } else if (!weatherFetching) {
     fetchWeatherData();
   }
+}
+
+// Live wind chip in the header — the number boaters check all day
+async function initWindChip() {
+  try {
+    const res = await fetch('/api/weather');
+    if (!res.ok) return;
+    weatherData = await res.json();
+    const w = weatherData.wind;
+    if (w && w.speed != null) {
+      const label = document.querySelector('.weather-btn-label');
+      if (label) {
+        label.textContent = ((w.directionCompass ? w.directionCompass + ' ' : '') + w.speed + ' kt');
+      }
+      const btn = document.getElementById('weatherBtn');
+      if (btn) btn.setAttribute('aria-label', 'Current conditions: wind ' + w.speed + ' knots');
+    }
+  } catch (e) { /* offline or API down — button keeps its default label */ }
 }
 
 function closeWeatherModal() {
@@ -1119,6 +1179,136 @@ function esc(str) {
   const el = document.createElement('span');
   el.textContent = str;
   return el.innerHTML;
+}
+
+// ========== SEARCH ==========
+let searchIndex = null;
+
+const SEARCH_TYPE_LABELS = {
+  marinas: 'Marina',
+  dining: 'Dining',
+  trails: 'Trail',
+  'marine-parks': 'Marine Park',
+  farms: 'Farm',
+  culture: 'Culture',
+  island: 'Island'
+};
+
+function buildSearchIndex() {
+  const ix = [];
+  const seen = new Set();
+  // Some places are cross-listed (e.g. shellfish farms in both Dining and
+  // Farms) — first occurrence wins so search shows each place once
+  const add = (type, item, sub) => {
+    const key = item.name.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    ix.push({
+      type: type,
+      id: item.id,
+      name: item.name,
+      sub: sub || '',
+      hay: (item.name + ' ' + (sub || '') + ' ' + (item.description || item.details || '')).toLowerCase()
+    });
+  };
+  MARINAS.forEach(m => add('marinas', m, [m.type, m.area].filter(Boolean).join(' · ')));
+  DINING.forEach(d => add('dining', d, [d.cuisine, d.area].filter(Boolean).join(' · ')));
+  TRAILS.forEach(t => add('trails', t, [t.difficulty, t.area].filter(Boolean).join(' · ')));
+  MARINE_PARKS.forEach(p => add('marine-parks', p, p.area));
+  FARMS.forEach(f => add('farms', f, [f.type, f.area].filter(Boolean).join(' · ')));
+  GALLERIES.forEach(g => add('culture', g, g.area));
+  ISLANDS.forEach(i => ix.push({
+    type: 'island', id: i.id, name: i.name, sub: i.tagline,
+    hay: (i.name + ' ' + i.tagline + ' ' + i.description).toLowerCase()
+  }));
+  return ix;
+}
+
+function initSearch() {
+  const overlay = document.getElementById('searchOverlay');
+  const input = document.getElementById('searchInput');
+  if (!overlay || !input) return;
+
+  input.addEventListener('input', () => runSearch(input.value));
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      const first = document.querySelector('#searchResults .search-result');
+      if (first) first.click();
+    }
+  });
+  document.getElementById('searchClose').addEventListener('click', closeSearch);
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) closeSearch();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && overlay.classList.contains('active')) closeSearch();
+  });
+}
+
+function openSearch() {
+  if (!searchIndex) searchIndex = buildSearchIndex();
+  const overlay = document.getElementById('searchOverlay');
+  const input = document.getElementById('searchInput');
+  document.body.style.overflow = 'hidden';
+  overlay.classList.add('active');
+  input.value = '';
+  runSearch('');
+  setTimeout(() => input.focus(), 50);
+  track('search_open');
+}
+
+function closeSearch() {
+  const overlay = document.getElementById('searchOverlay');
+  overlay.classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+function runSearch(q) {
+  const results = document.getElementById('searchResults');
+  q = q.trim().toLowerCase();
+  if (q.length < 2) {
+    results.innerHTML = '<div class="search-hint">Search everything in the guide — marinas, dining, trails, parks, farms, galleries, islands.</div>';
+    return;
+  }
+  const scored = [];
+  searchIndex.forEach(e => {
+    const nameLower = e.name.toLowerCase();
+    let score = -1;
+    if (nameLower.startsWith(q)) score = 0;
+    else if (nameLower.includes(q)) score = 1;
+    else if (e.hay.includes(q)) score = 2;
+    if (score >= 0) scored.push({ e, score });
+  });
+  scored.sort((a, b) => a.score - b.score || a.e.name.localeCompare(b.e.name));
+  const top = scored.slice(0, 20);
+
+  if (!top.length) {
+    results.innerHTML = '<div class="search-hint">No matches for &ldquo;' + esc(q) + '&rdquo;.</div>';
+    return;
+  }
+  results.innerHTML = top.map(({ e }) => {
+    const href = e.type === 'island' ? '/islands/' + e.id : '/' + e.type + '/' + e.id;
+    return `
+      <a class="search-result" href="${href}" onclick="return selectSearchResult(event, '${e.type}', '${e.id}')">
+        <span class="search-result-type">${SEARCH_TYPE_LABELS[e.type] || ''}</span>
+        <span class="search-result-name">${esc(e.name)}</span>
+        <span class="search-result-sub">${esc(e.sub)}</span>
+      </a>`;
+  }).join('');
+}
+
+function selectSearchResult(e, type, id) {
+  if (e && (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1)) return true;
+  if (e) e.preventDefault();
+  closeSearch();
+  track('search_select', { result_type: type, result_id: id });
+  if (type === 'island') {
+    switchTab('islands');
+    showIslandDetail(id);
+  } else {
+    openModalFor(type, id);
+  }
+  return false;
 }
 
 // ========== SERVICE WORKER ==========
