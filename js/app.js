@@ -121,7 +121,7 @@ function updateMeta(tab, islandId, item) {
   if (descTag) descTag.setAttribute('content', meta.desc);
   const canonTag = document.querySelector('link[rel="canonical"]');
   if (canonTag) {
-    canonTag.setAttribute('href', 'https://sjiboating.com' + path);
+    canonTag.setAttribute('href', 'https://www.sjiboating.com' + path);
   }
   // OG tags
   const ogTitle = document.querySelector('meta[property="og:title"]');
@@ -527,10 +527,11 @@ function switchTab(tab, opts) {
 
 // ========== MAP ==========
 function initMap() {
-  // Compute bounds from markers, then constrain the map to this region
-  const markerBounds = L.latLngBounds(MARINAS.map(m => [m.lat, m.lng]));
-  // Pad the bounds so you can pan a bit beyond the outermost markers
-  const maxBounds = markerBounds.pad(0.5);
+  // Frame the core archipelago (Lopez up through Sucia/Patos). Pan limits are
+  // padded around this same box — deriving them from the marker extent skewed
+  // the view east toward the Anacortes/Bellingham home marinas.
+  const coreBounds = L.latLngBounds([[48.40, -123.17], [48.80, -122.80]]);
+  const maxBounds = coreBounds.pad(2);
 
   map = L.map('map', {
     center: [48.58, -122.95],
@@ -555,13 +556,7 @@ function initMap() {
   const legend = document.getElementById('mapLegend');
   if (legend && window.innerWidth < 768) legend.classList.add('collapsed');
 
-  // Fit map to show all markers with padding; on phones frame the core
-  // archipelago instead so the islands fill the screen
-  if (window.innerWidth < 768) {
-    map.fitBounds(L.latLngBounds([[48.40, -123.18], [48.78, -122.80]]), { padding: [10, 10] });
-  } else {
-    map.fitBounds(markerBounds, { padding: [30, 30] });
-  }
+  map.fitBounds(coreBounds, { padding: window.innerWidth < 768 ? [10, 10] : [20, 20] });
 }
 
 // ========== MAP OVERLAY LAYERS ==========

@@ -2,7 +2,7 @@
  * SEO metadata and JSON-LD generators for each route.
  */
 
-const BASE_URL = 'https://sjiboating.com';
+const BASE_URL = 'https://www.sjiboating.com';
 
 export const ROUTE_META = {
   '/': {
