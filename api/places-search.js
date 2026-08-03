@@ -31,7 +31,17 @@ export default async function handler(req, res) {
     const data = await response.json();
 
     if (data.status !== 'OK' || !data.candidates?.length) {
-      return res.status(404).json({ error: 'Place not found', status: data.status });
+      // Surface Google's specific reason (e.g. REQUEST_DENIED) so config issues
+      // (key restriction / API not enabled / billing) are diagnosable instead of
+      // hidden behind a generic 404. error_message contains no secrets.
+      if (data.status && data.status !== 'ZERO_RESULTS') {
+        console.error('Places search denied:', data.status, '-', data.error_message || '(no message)');
+      }
+      return res.status(404).json({
+        error: 'Place not found',
+        status: data.status,
+        googleError: data.error_message ?? null,
+      });
     }
 
     const candidate = data.candidates[0];
