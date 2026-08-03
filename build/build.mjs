@@ -432,7 +432,7 @@ function build() {
     }
   }
   // Copy root files
-  for (const file of ['favicon.svg', 'og-image.png', 'og-image.svg', 'robots.txt', 'sw.js', 'manifest.webmanifest']) {
+  for (const file of ['favicon.svg', 'og-image.png', 'og-image.svg', 'og-navy-v1.jpg', 'robots.txt', 'sw.js', 'manifest.webmanifest']) {
     const src = join(ROOT, file);
     if (existsSync(src)) {
       cpSync(src, join(DIST, file));

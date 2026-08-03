@@ -1,0 +1,50 @@
+<!doctype html>
+<!--
+  San Juan Islands Boating Guide OG card, candidate S1 — navy chart.
+  Burgee + compass vectors from the original og-image.svg; DM Sans per css/.
+  Render: node ~/.claude-tools/screenshot/shot.mjs "file://$(pwd)/marketing/og/og-navy.html" <out.png> 1200 630
+-->
+<html>
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;700;800&display=swap" rel="stylesheet" />
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1200px; height: 630px; overflow: hidden; position: relative; }
+  body { background: linear-gradient(160deg, #1d2b3a 0%, #16222e 100%); font-family: "DM Sans", sans-serif; }
+  svg.chart { position: absolute; inset: 0; }
+  .stack { position: absolute; left: 0; right: 0; top: 118px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+  .title { font-weight: 800; font-size: 92px; color: #f0f4f8; line-height: 1; letter-spacing: -0.01em; margin-top: 44px; }
+  .subtitle { font-weight: 500; font-size: 40px; color: #a3c4d9; margin-top: 18px; }
+  .kicker { font-weight: 700; font-size: 20px; letter-spacing: 0.28em; margin-left: 0.28em; text-transform: uppercase; color: #7fa8c4; margin-top: 40px; }
+</style>
+</head>
+<body>
+  <svg class="chart" viewBox="0 0 1200 630">
+    <!-- depth-contour water lines (from original card, recolored for navy) -->
+    <path d="M0 470 Q150 450 300 480 Q450 510 600 470 Q750 430 900 460 Q1050 490 1200 465 L1200 630 L0 630Z" fill="#7bb8d4" fill-opacity="0.07"/>
+    <path d="M0 510 Q200 490 400 520 Q600 550 800 505 Q1000 460 1200 500 L1200 630 L0 630Z" fill="#7bb8d4" fill-opacity="0.09"/>
+    <path d="M0 555 Q180 535 360 565 Q540 595 720 550 Q900 505 1200 545 L1200 630 L0 630Z" fill="#7bb8d4" fill-opacity="0.12"/>
+    <!-- compass rose -->
+    <g transform="translate(1080, 90)" opacity="0.35">
+      <circle cx="0" cy="0" r="40" fill="none" stroke="#a3c4d9" stroke-width="1.5"/>
+      <line x1="0" y1="-45" x2="0" y2="45" stroke="#a3c4d9" stroke-width="1"/>
+      <line x1="-45" y1="0" x2="45" y2="0" stroke="#a3c4d9" stroke-width="1"/>
+      <text x="0" y="-52" text-anchor="middle" font-family="DM Sans" font-size="13" font-weight="700" fill="#a3c4d9">N</text>
+    </g>
+  </svg>
+  <div class="stack">
+    <!-- burgee, reversed for navy -->
+    <svg width="76" height="76" viewBox="0 0 70 70">
+      <line x1="8" y1="2" x2="8" y2="66" stroke="#f0f4f8" stroke-width="4" stroke-linecap="round"/>
+      <path d="M8 9 L62 9 L48 27 L62 45 L8 45 Z" fill="#f0f4f8"/>
+      <text x="31" y="34.5" text-anchor="middle" font-family="DM Sans" font-size="21" font-weight="800" fill="#16222e">SJ</text>
+    </svg>
+    <div class="title">San Juan Islands</div>
+    <div class="subtitle">Boating Guide</div>
+    <div class="kicker">Anchorages &middot; Marinas &middot; Local Knowledge</div>
+  </div>
+</body>
+</html>

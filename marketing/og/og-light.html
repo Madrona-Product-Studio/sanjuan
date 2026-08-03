@@ -1,0 +1,49 @@
+<!doctype html>
+<!--
+  San Juan Islands Boating Guide OG card, candidate S2 — bolder light refresh.
+  Same scheme as the current card, punchier type and water for thumbnail legibility.
+  Render: node ~/.claude-tools/screenshot/shot.mjs "file://$(pwd)/marketing/og/og-light.html" <out.png> 1200 630
+-->
+<html>
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;700;800&display=swap" rel="stylesheet" />
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1200px; height: 630px; overflow: hidden; position: relative; }
+  body { background: linear-gradient(135deg, #f0f4f8 0%, #e2ebf2 100%); font-family: "DM Sans", sans-serif; }
+  svg.chart { position: absolute; inset: 0; }
+  .stack { position: absolute; left: 0; right: 0; top: 104px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+  .title { font-weight: 800; font-size: 96px; color: #22303e; line-height: 1; letter-spacing: -0.01em; margin-top: 40px; }
+  .subtitle { font-weight: 500; font-size: 42px; color: #5a7a92; margin-top: 16px; }
+  .kicker { font-weight: 700; font-size: 20px; letter-spacing: 0.28em; margin-left: 0.28em; text-transform: uppercase; color: #7a95aa; margin-top: 38px; }
+</style>
+</head>
+<body>
+  <svg class="chart" viewBox="0 0 1200 630">
+    <path d="M0 450 Q150 430 300 460 Q450 490 600 450 Q750 410 900 440 Q1050 470 1200 445 L1200 630 L0 630Z" fill="#b8d4e8" fill-opacity="0.55"/>
+    <path d="M0 500 Q200 480 400 510 Q600 540 800 495 Q1000 450 1200 490 L1200 630 L0 630Z" fill="#a3c4d9" fill-opacity="0.45"/>
+    <path d="M0 550 Q180 530 360 560 Q540 590 720 545 Q900 500 1200 540 L1200 630 L0 630Z" fill="#8bb5cc" fill-opacity="0.4"/>
+    <ellipse cx="280" cy="470" rx="60" ry="20" fill="#c8d5c4" fill-opacity="0.7"/>
+    <ellipse cx="750" cy="450" rx="45" ry="15" fill="#c8d5c4" fill-opacity="0.6"/>
+    <g transform="translate(1080, 90)" opacity="0.25">
+      <circle cx="0" cy="0" r="40" fill="none" stroke="#2c3e50" stroke-width="1.5"/>
+      <line x1="0" y1="-45" x2="0" y2="45" stroke="#2c3e50" stroke-width="1"/>
+      <line x1="-45" y1="0" x2="45" y2="0" stroke="#2c3e50" stroke-width="1"/>
+      <text x="0" y="-52" text-anchor="middle" font-family="DM Sans" font-size="13" font-weight="700" fill="#2c3e50">N</text>
+    </g>
+  </svg>
+  <div class="stack">
+    <svg width="76" height="76" viewBox="0 0 70 70">
+      <line x1="8" y1="2" x2="8" y2="66" stroke="#22303e" stroke-width="4" stroke-linecap="round"/>
+      <path d="M8 9 L62 9 L48 27 L62 45 L8 45 Z" fill="#22303e"/>
+      <text x="31" y="34.5" text-anchor="middle" font-family="DM Sans" font-size="21" font-weight="800" fill="#ffffff">SJ</text>
+    </svg>
+    <div class="title">San Juan Islands</div>
+    <div class="subtitle">Boating Guide</div>
+    <div class="kicker">Anchorages &middot; Marinas &middot; Local Knowledge</div>
+  </div>
+</body>
+</html>
