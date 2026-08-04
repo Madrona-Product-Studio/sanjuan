@@ -222,6 +222,65 @@ export function generateJsonLd(route, data) {
     };
   }
 
+  if (route === '/farms') {
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      name: ROUTE_META['/farms'].title,
+      description: ROUTE_META['/farms'].description,
+      mainEntity: {
+        '@type': 'ItemList',
+        itemListElement: data.FARMS.map((f, i) => ({
+          '@type': 'ListItem',
+          position: i + 1,
+          item: {
+            '@type': 'LocalBusiness',
+            name: f.name,
+            description: f.description,
+            address: { '@type': 'PostalAddress', addressLocality: f.area, addressRegion: 'WA', addressCountry: 'US' }
+          }
+        }))
+      }
+    };
+  }
+
+  if (route === '/culture') {
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      name: ROUTE_META['/culture'].title,
+      description: ROUTE_META['/culture'].description,
+      mainEntity: {
+        '@type': 'ItemList',
+        itemListElement: data.GALLERIES.map((g, i) => ({
+          '@type': 'ListItem',
+          position: i + 1,
+          item: {
+            '@type': 'Place',
+            name: g.name,
+            description: g.description,
+            address: { '@type': 'PostalAddress', addressLocality: g.area, addressRegion: 'WA', addressCountry: 'US' }
+          }
+        }))
+      }
+    };
+  }
+
+  if (route === '/about') {
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'AboutPage',
+      name: ROUTE_META['/about'].title,
+      description: ROUTE_META['/about'].description,
+      url: `${BASE_URL}/about`,
+      isPartOf: {
+        '@type': 'WebSite',
+        name: 'San Juan Islands Boating Guide',
+        url: BASE_URL
+      }
+    };
+  }
+
   if (route === '/logistics') {
     return {
       '@context': 'https://schema.org',
