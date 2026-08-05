@@ -1,79 +1,26 @@
 /**
- * Shared utilities for API routes.
+ * Shared utilities for API routes — San Juan's config.
+ *
+ * The implementations (rate limiting, origin/CORS) come from
+ * @madrona/api-utils, vendored at api/_vendor/api-utils.js. Edit the canonical
+ * copy in madrona-studio/packages/api-utils and re-copy — never edit the
+ * vendored file directly (a reapply overwrites it).
  */
 
-// ─── Rate Limiting ──────────────────────────────────────────────────────────
-const rateLimitStore = new Map();
+import { createRateLimiter, createOriginChecker } from './_vendor/api-utils.js';
 
-const RATE_LIMITS = {
+export const checkRateLimit = createRateLimiter({
+  // endpoint key → { maxRequests, windowMs }
   'places-search': { maxRequests: 60, windowMs: 60 * 60 * 1000 },
   'place-photo':   { maxRequests: 120, windowMs: 60 * 60 * 1000 },
-};
+});
 
-export function checkRateLimit(req, res, endpointKey) {
-  const config = RATE_LIMITS[endpointKey];
-  if (!config) return true;
-
-  const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim()
-           || req.headers['x-real-ip']
-           || req.socket?.remoteAddress
-           || 'unknown';
-  const key = `${endpointKey}:${ip}`;
-  const now = Date.now();
-
-  let entry = rateLimitStore.get(key);
-  if (!entry || now - entry.windowStart > config.windowMs) {
-    entry = { windowStart: now, count: 0 };
-  }
-
-  entry.count++;
-  rateLimitStore.set(key, entry);
-
-  if (rateLimitStore.size > 500) {
-    for (const [k, v] of rateLimitStore) {
-      if (now - v.windowStart > config.windowMs) rateLimitStore.delete(k);
-    }
-  }
-
-  if (entry.count > config.maxRequests) {
-    const retryAfter = Math.ceil((config.windowMs - (now - entry.windowStart)) / 1000);
-    res.setHeader('Retry-After', String(retryAfter));
-    res.status(429).json({ error: 'Too many requests. Please try again later.', retryAfter });
-    return false;
-  }
-
-  return true;
-}
-
-// ─── Origin Checking ────────────────────────────────────────────────────────
-const ALLOWED_ORIGINS = [
-  'https://sjiboating.com',
-  'https://www.sjiboating.com',
-  'https://sanjuan.vercel.app',
-];
-
-if (process.env.NODE_ENV !== 'production' && process.env.VERCEL_ENV !== 'production') {
-  ALLOWED_ORIGINS.push('http://localhost:5173', 'http://localhost:3000', 'http://localhost:8080');
-}
-
-// Also allow the Vercel preview deployment URLs
-export function checkOrigin(req, res) {
-  const origin = req.headers.origin || req.headers.referer;
-
-  if (!origin) {
-    if (req.method === 'GET') return true;
-    res.status(403).json({ error: 'Forbidden' });
-    return false;
-  }
-
-  const allowed = ALLOWED_ORIGINS.some(ao => origin.startsWith(ao))
-    || origin.includes('vercel.app');
-
-  if (!allowed) {
-    res.status(403).json({ error: 'Forbidden' });
-    return false;
-  }
-
-  res.setHeader('Access-Control-Allow-Origin', origin);
-  return true;
-}
+export const checkOrigin = createOriginChecker({
+  allowedOrigins: [
+    'https://sjiboating.com',
+    'https://www.sjiboating.com',
+    'https://sanjuan.vercel.app',
+  ],
+  allowVercelPreview: true, // preview deployments call these routes too
+  localhostOrigins: ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:8080'],
+});
