@@ -6,7 +6,7 @@
  * Returns: { placeId, name, rating, userRatingsTotal, address, phone, photoRefs }
  */
 
-import { checkOrigin, checkRateLimit } from './_utils.js';
+import { checkOrigin, checkRateLimit, getQuery } from './_utils.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -20,7 +20,7 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Google Places API key not configured' });
   }
 
-  const { query } = req.query;
+  const { query } = getQuery(req);
   if (!query || typeof query !== 'string' || query.length > 200) {
     return res.status(400).json({ error: 'Invalid or missing query parameter (max 200 chars)' });
   }
