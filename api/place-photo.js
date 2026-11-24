@@ -6,7 +6,7 @@
  * Returns: image/jpeg (or whatever Google sends)
  */
 
-import { checkOrigin, checkRateLimit } from './_utils.js';
+import { checkOrigin, checkRateLimit, getQuery } from './_utils.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -20,7 +20,7 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Google Places API key not configured' });
   }
 
-  const { ref, maxwidth = '800' } = req.query;
+  const { ref, maxwidth = '800' } = getQuery(req);
   if (!ref || typeof ref !== 'string' || ref.length > 2000) {
     return res.status(400).json({ error: 'Invalid or missing ref parameter' });
   }
